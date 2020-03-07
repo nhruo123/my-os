@@ -31,7 +31,7 @@ gdt_end:
 
 
 gdt_desc:
-   dw gdt_end - gdt 
+   dw gdt_end - gdt - 1
    dd gdt
 
 boot:

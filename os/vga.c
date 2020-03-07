@@ -97,7 +97,7 @@ void terminal_write(const char* data, size_t size)
 	}
 }
 
-void terminalWriteStr(const char* data)
+void print(const char* data)
 {
 	terminal_write(data, strlen(data));
 }

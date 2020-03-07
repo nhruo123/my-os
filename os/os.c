@@ -1,11 +1,22 @@
-#include "os.h"
+#include "vga.h"
+#include "interrupts.h"
 
 void main() 
 {
   terminalInit();
-  terminalWriteStr("Hello wrold, from my kernal!\n");
+  print("Hello wrold, from my kernal!\n");
 
-  
 
-  for(;;) {}
+  print("Starting init idt....\n");
+
+  init_idt();
+
+  print("Done init idt\n");
+
+  __asm__("int $0x20");
+
+  print("halt...\n");
+  for(;;) {
+  	int x = 1;
+  }
 }
