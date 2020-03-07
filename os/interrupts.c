@@ -49,16 +49,16 @@ void slave_eoi() {
 }
 
 struct IDT_entry {
-	unsigned short int offset_lowerbits;
-	unsigned short int selector;
-	unsigned char zero;
-	unsigned char type_attr;
-	unsigned short int offset_higherbits;
+	uint16_t offset_lowerbits;
+	uint16_t selector;
+	uint8_t zero;
+	uint8_t type_attr;
+	uint16_t offset_higherbits;
 };
 
-struct IDT_pointer {
-	unsigned short int idt_size;
-	unsigned int idt_offset;
+struct __attribute__((__packed__)) IDT_pointer {
+	uint16_t idt_size;
+	uint32_t idt_offset;
 };
 
 struct IDT_entry IDT[256];
@@ -104,24 +104,23 @@ void load_itd(struct IDT_pointer idt_ptr) {
 void init_idt(void) {
 	init_pics(32, 40); // remap pics
 
-	unsigned long idt_address;
 	struct IDT_pointer idt_ptr;
 
-	unsigned long irq_div_zero_address = (unsigned long)div_by_zero_handler; 
-	IDT[32].offset_lowerbits = irq_div_zero_address & 0xffff;
-	IDT[32].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
-	IDT[32].zero = 0;
-	IDT[32].type_attr = 0x8e; /* INTERRUPT_GATE */
-	IDT[32].offset_higherbits = (irq_div_zero_address & 0xffff0000) >> 16;
+	uint32_t irq_div_zero_address = (uint32_t)div_by_zero_handler; 
+	IDT[0].offset_lowerbits = irq_div_zero_address & 0xffff;
+	IDT[0].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
+	IDT[0].zero = 0;
+	IDT[0].type_attr = 0x8e; /* INTERRUPT_GATE */
+	IDT[0].offset_higherbits = (irq_div_zero_address & 0xffff0000) >> 16;
 
-	unsigned long irq0_address = (unsigned long)irq0_handler; 
+	uint32_t irq0_address = (uint32_t)irq0_handler; 
 	IDT[32].offset_lowerbits = irq0_address & 0xffff;
 	IDT[32].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
 	IDT[32].zero = 0;
 	IDT[32].type_attr = 0x8e; /* INTERRUPT_GATE */
 	IDT[32].offset_higherbits = (irq0_address & 0xffff0000) >> 16;
 
-	unsigned long irq1_address = (unsigned long)irq1_handler; 
+	uint32_t irq1_address = (uint32_t)irq1_handler; 
 	IDT[33].offset_lowerbits = irq1_address & 0xffff;
 	IDT[33].selector = 0x08; /* KERNEL_CODE_SEGMENT_OFFSET */
 	IDT[33].zero = 0;
@@ -130,7 +129,8 @@ void init_idt(void) {
 
 
 	idt_ptr.idt_size = (sizeof (struct IDT_entry) * 256);
-	idt_ptr.idt_offset = (unsigned int)IDT;
+	idt_ptr.idt_offset = (uint32_t)IDT;
+
 
 	load_itd(idt_ptr);
 }

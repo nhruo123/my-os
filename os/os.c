@@ -4,7 +4,7 @@
 void main() 
 {
   terminalInit();
-  print("Hello wrold, from my kernal!\n");
+  print("Hello world, from my kernal!\n");
 
 
   print("Starting init idt....\n");
@@ -13,6 +13,7 @@ void main()
 
   print("Done init idt\n");
 
+  // int zero = 0/0;
   __asm__("int $0x20");
 
   print("halt...\n");
