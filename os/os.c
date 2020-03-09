@@ -14,10 +14,13 @@ void main()
   print("Done init idt\n");
 
   // int zero = 0/0;
-  __asm__("int $0x20");
+
+  // __asm__("int $0x20");
+
 
   print("halt...\n");
   for(;;) {
-  	int x = 1;
+  	// int x = 1;
+  	__asm__("hlt");
   }
 }

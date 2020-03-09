@@ -7,6 +7,9 @@
 
 start: jmp boot
 
+disk_id:
+ db 0
+
 gdt:
 
 gdt_null:
@@ -37,6 +40,8 @@ gdt_desc:
 boot:
  cli ; no interrupts
 
+ mov [disk_id], dl
+
 load_os:
  mov ax, 0x50
  
@@ -48,7 +53,7 @@ load_os:
  mov ch, 0 ; track 0
  mov cl, 2 ; sector to read (The second sector)
  mov dh, 0 ; head number
- mov dl, 0 ; drive drive 
+ mov dl, [disk_id] ; disk id
  mov ah, 0x02 ; read sectors from disk
  int 0x13 ; call the BIOS routine
 
@@ -83,6 +88,22 @@ clear_pipe:
  jmp [0x500 + 0x18] ; jump and execute the sector!
 
 
- ; We have to be 512 bytes. Clear the rest of the bytes with 0
-times 510 - ($-$$) db 0
+times 446 - ($-$$) db 0
+
+db 0x80 ;; bootable
+db 0x0 ;; starting head
+db 0x1 ;; sector + cylinder
+db 0x0 ;; cylinder
+db 0x7f ;; system id
+db 0x0 ;; ending head
+db 0x0 ;; ending sector + ending cylinder
+db 0x0 ;; ending cylinder
+dd 0x0 ;; relative sector
+dd 0x1 ;; total sectors in partition
+
+
+times 16 db 0 ;; 2nd entry
+times 16 db 0 ;; 3rd entry
+times 16 db 0 ;; 4th entry
+
 dw 0xAA55 ; Boot Signiture

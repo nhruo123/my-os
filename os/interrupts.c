@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "vga.h"
+#include "vga.h" 
 
 #define PIC1_COMMAND 0x20
 #define PIC1_DATA (PIC1_COMMAND + 1)
@@ -9,14 +9,24 @@
 #define ICW1 0x10
 #define ICW4 0x01
 
-static inline void outb(uint16_t port, uint8_t val) {
+static inline void outb(uint16_t port, uint8_t val)
+{
     asm volatile ( "outb %0, %1" : : "a"(val), "Nd"(port) );
+}
+
+static inline uint8_t inb(uint16_t port)
+{
+    uint8_t ret;
+    asm volatile ( "inb %1, %0"
+                   : "=a"(ret)
+                   : "Nd"(port) );
+    return ret;
 }
 
 /* init_pics()
  * init the PICs and remap them
  */
-void init_pics(int pic1_offset, int pic2_offset) {
+void init_pics(uint8_t pic1_offset, uint8_t pic2_offset) {
 	/* send ICW1 */
 	outb(PIC1_COMMAND, ICW1 | ICW4);
 	outb(PIC1_COMMAND, ICW1 | ICW4);
@@ -76,7 +86,7 @@ void div_by_zero_handler() {
 void irq0_handler() {
 	__asm__("pushal");
     
-    print("INT 0 \n");
+    print("INT 32 \n");
 	master_eoi();
 
     __asm__("popal; leave; iret"); /* BLACK MAGIC! */
@@ -85,8 +95,8 @@ void irq0_handler() {
 
 void irq1_handler() {
 	__asm__("pushal");
-    
-    print("INT 1 \n");
+    inb(0x60);
+    print("INT 33 \n");
 	master_eoi();
 
     __asm__("popal; leave; iret"); /* BLACK MAGIC! */
@@ -102,7 +112,7 @@ void load_itd(struct IDT_pointer idt_ptr) {
 
 
 void init_idt(void) {
-	init_pics(32, 40); // remap pics
+	init_pics(0x20, 0x28); // remap pics
 
 	struct IDT_pointer idt_ptr;
 
