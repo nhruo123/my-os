@@ -1,5 +1,5 @@
-#include "vga.h"
-#include "interrupts.h"
+#include "../vga.h"
+#include "../interrupts.h"
 
 void main() 
 {

@@ -4,7 +4,7 @@
 #define PIC1_COMMAND 0x20
 #define PIC1_DATA (PIC1_COMMAND + 1)
 #define PIC2_COMMAND 0xA0
-#define PIC2_DATA (PIC1_COMMAND + 1)
+#define PIC2_DATA (PIC2_COMMAND + 1)
 
 #define ICW1 0x10
 #define ICW4 0x01
@@ -37,15 +37,15 @@ void init_pics(uint8_t pic1_offset, uint8_t pic2_offset) {
 
 	/* send ICW3 */
 	outb(PIC1_DATA, 4);	/* IRQ2 -> connection to slave */
-	outb(PIC1_DATA, 2);
+	outb(PIC2_DATA, 2);
 
 	/* send ICW4 */
 	outb(PIC1_DATA, ICW4);
-	outb(PIC1_DATA, ICW4);
+	outb(PIC2_DATA, ICW4);
 
 	/* disable all IRQs but keybord */
-	outb(PIC2_DATA, 0xFD);
-	outb(PIC1_DATA, 0xFF);
+	outb(PIC1_DATA, 0xFD);
+	outb(PIC2_DATA, 0xFF);
 
 }
 
@@ -86,7 +86,7 @@ void div_by_zero_handler() {
 void irq0_handler() {
 	__asm__("pushal");
     
-    print("INT 32 \n");
+    print("INT 32");
 	master_eoi();
 
     __asm__("popal; leave; iret"); /* BLACK MAGIC! */
@@ -95,8 +95,10 @@ void irq0_handler() {
 
 void irq1_handler() {
 	__asm__("pushal");
-    inb(0x60);
-    print("INT 33 \n");
+    unsigned char scan_code = inb(0x60);
+    print("INT 33 was called keybord input code is: '");
+    print_char(scan_code);
+    print("'\n");
 	master_eoi();
 
     __asm__("popal; leave; iret"); /* BLACK MAGIC! */
