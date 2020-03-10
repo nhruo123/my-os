@@ -1,11 +1,11 @@
 BUILD_DIR=build
 BOOTLOADER=$(BUILD_DIR)/bootloader/bootloader.o
-OS=$(BUILD_DIR)/os/os
+OS=$(BUILD_DIR)/os/os.elf
 DISK_IMG=$(BUILD_DIR)/disk.img
 
 all: bootdisk
 
-.PHONY: bootdisk bootloader os
+.PHONY: directories bootdisk bootloader os
 
 bootloader:
 	make -C bootloader
@@ -22,3 +22,8 @@ qemu:
 clean:
 	make -C bootloader clean
 	make -C os clean
+	rm $(DISK_IMG)
+	rmdir $(BUILD_DIR)
+
+directories: 
+	mkdir -p $(BUILD_DIR)

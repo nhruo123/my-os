@@ -1,5 +1,5 @@
 BUILD_DIR=../build/os
-OS=$(BUILD_DIR)/os
+OS=$(BUILD_DIR)/os.elf
 
 CFLAGS+=-ffreestanding -fno-pic -m32 -gdwarf-4 -ggdb3
 

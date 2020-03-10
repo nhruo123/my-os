@@ -1,5 +1,6 @@
 #include <stdint.h>
-#include "vga.h" 
+#include "../screen/screen.h" 
+#include "../IO/IO.h"
 
 #define PIC1_COMMAND 0x20
 #define PIC1_DATA (PIC1_COMMAND + 1)
@@ -9,19 +10,6 @@
 #define ICW1 0x10
 #define ICW4 0x01
 
-static inline void outb(uint16_t port, uint8_t val)
-{
-    asm volatile ( "outb %0, %1" : : "a"(val), "Nd"(port) );
-}
-
-static inline uint8_t inb(uint16_t port)
-{
-    uint8_t ret;
-    asm volatile ( "inb %1, %0"
-                   : "=a"(ret)
-                   : "Nd"(port) );
-    return ret;
-}
 
 /* init_pics()
  * init the PICs and remap them
@@ -76,7 +64,7 @@ struct IDT_entry IDT[256];
 void div_by_zero_handler() {
 	__asm__("pushal");
     
-    print("INT 0 was called! div by zero !!! \n");
+    kprint("INT 0 was called! div by zero !!! \n");
 	master_eoi();
 
     __asm__("popal; leave; iret"); /* BLACK MAGIC! */
@@ -86,7 +74,7 @@ void div_by_zero_handler() {
 void irq0_handler() {
 	__asm__("pushal");
     
-    print("INT 32");
+    kprint("INT 32");
 	master_eoi();
 
     __asm__("popal; leave; iret"); /* BLACK MAGIC! */
@@ -96,9 +84,9 @@ void irq0_handler() {
 void irq1_handler() {
 	__asm__("pushal");
     unsigned char scan_code = inb(0x60);
-    print("INT 33 was called keybord input code is: '");
+    kprint("INT 33 was called keybord input code is: '");
     print_char(scan_code);
-    print("'\n");
+    kprint("'\n");
 	master_eoi();
 
     __asm__("popal; leave; iret"); /* BLACK MAGIC! */

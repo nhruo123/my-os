@@ -9,6 +9,6 @@ focus cmd
 set disassembly-flavor intel
 
 target remote localhost:26000
-symbol-file build/os/os
+symbol-file build/os/os.elf
 b *0x7c00
 b main
