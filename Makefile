@@ -1,29 +1,27 @@
 BUILD_DIR=build
-BOOTLOADER=$(BUILD_DIR)/bootloader/bootloader.o
 OS=$(BUILD_DIR)/os/os.elf
-DISK_IMG=$(BUILD_DIR)/disk.img
+DISK_IMG=os.iso
 
 all: bootdisk
 
-.PHONY: directories bootdisk bootloader os
+.PHONY: directories bootdisk  os
 
-bootloader:
-	make -C bootloader
 os:
 	make -C os
-bootdisk: bootloader os
-	dd if=/dev/zero of=$(DISK_IMG) bs=512 count=5120
-	dd conv=notrunc if=$(BOOTLOADER) of=$(DISK_IMG) bs=512 count=1 seek=0
-	dd conv=notrunc if=$(OS) of=$(DISK_IMG) bs=512 count=$$(($(shell stat --printf="%s" $(OS))/512)) seek=1
+
+bootdisk: os
+	mkdir -p isodir/boot/grub
+	cp $(OS) isodir/boot/os.elf
+	cp grub.cfg isodir/boot/grub/grub.cfg
+	grub-mkrescue -o $(DISK_IMG) isodir
+
 
 qemu:
-	qemu-system-i386 -machine q35 -fda $(DISK_IMG) -gdb tcp::26000 -S
+	qemu-system-i386 -cdrom $(DISK_IMG) -gdb tcp::26000 -S
 
 clean:
-	make -C bootloader clean
 	make -C os clean
 	rm $(DISK_IMG)
-	rmdir $(BUILD_DIR)
 
 directories: 
 	mkdir -p $(BUILD_DIR)
