@@ -8,7 +8,6 @@ SECTIONS
 	. = 1M;
 	.boot : ALIGN(4k) {
 		*(.multiboot)
-
 		. = ALIGN(4k);
 	}
 	. = . + VIRT_BASE;
