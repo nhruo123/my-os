@@ -1,43 +1,41 @@
-/* The bootloader will look at this image and start execution at the symbol
-   designated as the entry point. */
 ENTRY(_start)
- 
-/* Tell where the various sections of the object files will be put in the final
-   kernel image. */
+
+
+VIRT_BASE = 0xC0000000;
+
 SECTIONS
 {
-	/* Begin putting sections at 1 MiB, a conventional place for kernels to be
-	   loaded at by the bootloader. */
 	. = 1M;
- 
-	/* First put the multiboot header, as it is required to be put very early
-	   early in the image or the bootloader won't recognize the file format.
-	   Next we'll put the .text section. */
-	.text BLOCK(4K) : ALIGN(4K)
-	{
+	.boot : ALIGN(4k) {
 		*(.multiboot)
+
+		. = ALIGN(4k);
+	}
+	. = . + VIRT_BASE;
+	_kernel_start = . ;
+	.text : AT(ADDR(.text) - VIRT_BASE) ALIGN(4k) {
+		*(.text.*)
 		*(.text)
 	}
- 
+
 	/* Read-only data. */
-	.rodata BLOCK(4K) : ALIGN(4K)
-	{
+	.rodata : AT(ADDR(.rodata) - VIRT_BASE) ALIGN(4k) {
+		*(.rodata.*)
 		*(.rodata)
 	}
- 
+
 	/* Read-write data (initialized) */
-	.data BLOCK(4K) : ALIGN(4K)
-	{
+	.data : AT(ADDR(.data) - VIRT_BASE) ALIGN(4K) {
+		*(.data.*)
 		*(.data)
 	}
- 
+
 	/* Read-write data (uninitialized) and stack */
-	.bss BLOCK(4K) : ALIGN(4K)
-	{
-		*(COMMON)
+	.bss : AT(ADDR(.bss) - VIRT_BASE) {
+		*(.bss.*)
 		*(.bss)
+		*(COMMON)
 	}
- 
-	/* The compiler may produce other sections, by default it will put them in
-	   a segment with the same name. Simply add stuff here as needed. */
+
+	_kernel_end = .;
 }
