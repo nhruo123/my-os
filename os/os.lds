@@ -1,4 +1,4 @@
-ENTRY(_start)
+ENTRY(_bootstrap_start)
 
 
 VIRT_BASE = 0xC0000000;
@@ -8,10 +8,17 @@ SECTIONS
 	. = 1M;
 	.boot : ALIGN(4k) {
 		*(.multiboot)
+		*(.bootstrap)
+		*(.bootstrap.*)
 		. = ALIGN(4k);
 	}
+
+
+
 	. = . + VIRT_BASE;
 	_kernel_start = . ;
+	_kernel_physical_start = _kernel_start - VIRT_BASE;
+
 	.text : AT(ADDR(.text) - VIRT_BASE) ALIGN(4k) {
 		*(.text.*)
 		*(.text)
@@ -30,11 +37,13 @@ SECTIONS
 	}
 
 	/* Read-write data (uninitialized) and stack */
-	.bss : AT(ADDR(.bss) - VIRT_BASE) {
+	.bss : AT(ADDR(.bss) - VIRT_BASE) ALIGN(4K) {
 		*(.bss.*)
 		*(.bss)
 		*(COMMON)
 	}
 
+	. = ALIGN(4k);
 	_kernel_end = .;
+	_kernel_physical_end = _kernel_end - VIRT_BASE;
 }

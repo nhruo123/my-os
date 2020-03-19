@@ -1,7 +1,8 @@
 #include "../screen/screen.h"
 #include "interrupts.h"
+#include "../multiboot.h"
 
-void main() 
+void main(multiboot_info_t* mbd, char * pmm, int block_count, int block_size) 
 {
   terminalInit();
   kprint("Hello world, from my kernal!\n");
