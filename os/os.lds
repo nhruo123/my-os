@@ -6,12 +6,16 @@ VIRT_BASE = 0xC0000000;
 SECTIONS
 {
 	. = 1M;
+
+	_kernel_bootstrap_start = .;
 	.boot : ALIGN(4k) {
 		*(.multiboot)
 		*(.bootstrap)
 		*(.bootstrap.*)
 		. = ALIGN(4k);
 	}
+
+	_kernel_bootstrap_end = .;
 
 
 

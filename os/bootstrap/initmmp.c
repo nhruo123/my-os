@@ -12,6 +12,9 @@ extern uint32_t * _kernel_physical_end;
 extern uint32_t * _kernel_physical_start;
 extern uint32_t * VIRT_BASE;
 extern uint32_t * _kernel_start;
+extern uint32_t * _kernel_bootstrap_start;
+extern uint32_t * _kernel_bootstrap_end;
+
 typedef struct my_memory_map {
 	uint32_t size;
 	uint32_t base_addr_low,base_addr_high;
@@ -25,7 +28,7 @@ uint8_t * pmm __attribute__ ((section(".bootstrap.data"))) = 0;
 uint32_t block_count __attribute__ ((section(".bootstrap.data"))) = 0;
 uint32_t block_size __attribute__ ((section(".bootstrap.data"))) = 4096;
 
-int __attribute__ ((section(".bootstrap"))) bootstrap_alloc_first () {
+uint32_t __attribute__ ((section(".bootstrap"))) bootstrap_alloc_first () {
 
 	for (uint32_t i=0; i< block_count / 8; i++)
 		if (pmm[i] != 0XFF)
@@ -40,6 +43,29 @@ int __attribute__ ((section(".bootstrap"))) bootstrap_alloc_first () {
 			}
 
 	return -1;
+}
+
+void __attribute__ ((section(".bootstrap"))) bootstrap_map(uint32_t physical_adress_start,uint32_t virtual_adress_start , uint32_t blocks, uint32_t * pd) {
+    uint32_t address_mask = ~0xfff;
+    uint32_t page_flags = 0x3;
+
+    uint32_t page_table_index_offset = virtual_adress_start >> 22 & 0x3FF;
+    uint32_t pyhsical_offset = 0;
+    for(uint32_t page_table_index =  page_table_index_offset ; (page_table_index - page_table_index_offset) <= blocks / 1024; page_table_index++) { 
+        uint32_t * pt = (uint32_t *)bootstrap_alloc_first();
+
+        pd[page_table_index] = ((uint32_t)pt & address_mask) | page_flags ;
+
+        uint32_t page_index = 0;
+        
+        if( page_table_index == page_table_index_offset ) {
+            page_index = virtual_adress_start >> 12 & 0x3FF; // 10 bit mask to get the page index 
+        }
+        for(; page_index < 1024; page_index++) {
+            pt[page_index] = (physical_adress_start + pyhsical_offset * 0x1000 & address_mask) | page_flags;
+            pyhsical_offset++;
+        } 
+    }
 }
 
 void __attribute__ ((section(".bootstrap"))) init_bit_map(multiboot_info_t* mbt, char * pmm_out, int block_count_out, int block_size_out) {
@@ -78,32 +104,21 @@ void __attribute__ ((section(".bootstrap"))) init_bit_map(multiboot_info_t* mbt,
     mmap_set(0);
 
 
-    uint32_t flag_mask = ~0xfff;
+    uint32_t address_mask = ~0xfff;
+    uint32_t page_flags = 0x3;
 
     uint32_t * pd = (uint32_t *)bootstrap_alloc_first();
 
-    pd[1023] = ((uint32_t)pd & flag_mask) | 0x3 ; //self map
+    pd[1023] = ((uint32_t)pd & address_mask) | page_flags ; //self map
 
-    // TODO print error if kernel size is overflowing
-    for(uint32_t page_table_index = 0 ; page_table_index <= kernel_blocks / 1024; page_table_index++) { 
-        uint32_t * pt = (uint32_t *)bootstrap_alloc_first();
+    bootstrap_map((uint32_t)&_kernel_physical_start,(uint32_t)&_kernel_start, kernel_blocks, pd); // maps kernel
 
-        uint32_t page_table_entry = ((uint32_t)pt & flag_mask) | 0x3;
-        pd[(uint32_t)&_kernel_physical_start / 0x400000 + page_table_index] =  page_table_entry;//identrty map
-        pd[(uint32_t)&_kernel_start / 0x400000 + page_table_index] = page_table_entry; // real map
-
-        uint32_t page_index = 0;
-        if( page_table_index == 0 ) {
-            page_index = (uint32_t)&_kernel_physical_start >> 12 & 0x3FF; // 10 bit mask to get the page index 
-        }
-        for(; page_index < 1024; page_index++) {
-            pt[page_index] = ((page_index * 0x1000 + page_table_index * 0x400000 ) & flag_mask) | 0x3;
-        } 
-    }
+    uint32_t bootstrap_size = ((uint32_t)&_kernel_bootstrap_end - (uint32_t)&_kernel_bootstrap_start) / block_size;
+    bootstrap_map((uint32_t)&_kernel_bootstrap_start,(uint32_t)&_kernel_bootstrap_start, bootstrap_size, pd); // maps bootsrap ljmp code
 
     asm("movl %0, %%eax; movl %%eax, %%cr3;"::"r"(pd));
 
-    pmm_out = pmm;
+    pmm_out = pmm + (uint32_t) &VIRT_BASE;
     block_count_out = block_count;
     block_size_out = block_size;
 

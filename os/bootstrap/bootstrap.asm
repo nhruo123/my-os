@@ -14,10 +14,10 @@ _bootstrap_start:
     push ebx
     call init_bit_map
 
-    ; mov ecx, cr0
-	; or ecx, 0x80010000
-	; mov cr0, ecx
+    mov ecx, cr0
+	or ecx, 0x80010000
+	mov cr0, ecx
 
-    lea eax, [_start - 0xC0000000]
+    lea eax, [_higher_half]
     jmp eax
 .end:
