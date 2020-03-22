@@ -1,9 +1,9 @@
 BUILD_DIR=../build/os
-SYSROOT=../sysroot
+SYSROOT := $(shell pwd)/../sysroot
 OS=$(BUILD_DIR)/os.elf
 
-CC =i686-elf-gcc --sysroot="/home/nhruo/Desktop/my-os (copy)/sysroot" -isystem=/usr/include
-AR = i686-elf-ar
+CC := i686-elf-gcc --sysroot="$(SYSROOT)" -isystem=/usr/include
+AR := i686-elf-ar
 
 CFLAGS +=-mgeneral-regs-only -O2 -g -ffreestanding -Wall -Wextra -D__is_kernel -Iinclude
 LIBS:=$(LIBS) -nostdlib -lk -lgcc
