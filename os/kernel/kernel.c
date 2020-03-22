@@ -16,7 +16,7 @@ void main(multiboot_info_t* mbd, char * pmm, int block_count, int block_size)
 
   // int zero = 0/0;
 
-  // __asm__("int $0x20");
+  __asm__("int $0x20");
 
 
   kprint("halt...\n");

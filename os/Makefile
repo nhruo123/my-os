@@ -1,39 +1,54 @@
 BUILD_DIR=../build/os
+SYSROOT=../sysroot
 OS=$(BUILD_DIR)/os.elf
 
-CFLAGS +=-ffreestanding -fno-pic -m32 -gdwarf-4 -ggdb3
-ASMFLAGS +=-f elf -F dwarf -g
+CC =i686-elf-gcc --sysroot="/home/nhruo/Desktop/my-os (copy)/sysroot" -isystem=/usr/include
+AR = i686-elf-ar
 
-SRCS_DIRS := $(shell find . -type d)
-OUT_DIRS := $(subst ./, $(BUILD_DIR)/, $(SRCS_DIRS))
-OUT_DIRS := $(BUILD_DIR) $(OUT_DIRS)
-OS_C_SRCS := $(shell find . -name "*.c")
-OS_C_OBJS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(OS_C_SRCS))
-OS_ASM_SRCS := $(shell find . -name "*.asm")
-OS_ASM_OBJS := $(patsubst %.asm, $(BUILD_DIR)/%.o, $(OS_ASM_SRCS))
-OS_OBJS := $(OS_C_OBJS)  $(OS_ASM_OBJS)
+CFLAGS +=-mgeneral-regs-only -O2 -g -ffreestanding -Wall -Wextra -D__is_kernel -Iinclude
+LIBS:=$(LIBS) -nostdlib -lk -lgcc
+C_OBJS :=$(shell find . -type f -name "*.c")
+ASM_OBJS := $(shell find . -type f -name "*.s")
+C_OBJS := $(C_OBJS:.%.c=$(BUILD_DIR)%.o)
+ASM_OBJS := $(ASM_OBJS:.%.s=$(BUILD_DIR)%.o)
+OBJS := $(C_OBJS) $(ASM_OBJS)
 
-.PHONY: directories
 
-all: directories $(OS)
+.PHONY: all clean install install-headers install-kernel
+.SUFFIXES: .o .c .s
 
-$(BUILD_DIR)/%.o : %.asm
-	nasm $(ASMFLAGS) $< -o $@
+all: $(OS)
+
+$(OS): $(OBJS) os.lds
+	$(CC) -T os.lds -o $@ $(CFLAGS) $(OBJS) $(LIBS)
+	grub-file --is-x86-multiboot $@
 
 
 $(BUILD_DIR)/%.o : %.c
-	gcc $(CFLAGS) -c $< -o $@
+	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
 
-$(OS): $(OS_OBJS)
-	ld -m elf_i386 -nmagic -Tos.lds $(OS_OBJS) -o $@
+$(BUILD_DIR)/%.o : %.s
+	$(LIBK_OBJS)
+	$(CC) -MD -c $< -o $@ $(CFLAGS)
 
 
-directories: $(OUT_DIRS)
+install: install-headers install-kernel
 
-$(OUT_DIRS):
-	mkdir -p $(OUT_DIRS)
+
+install-headers:
+	mkdir -p $(SYSROOT)/usr/include/.
+	cp -R include/. $(SYSROOT)/usr/include/.
+
+install-kernel : dirs $(OS)
+	cd $(BUILD_DIR)
+	mkdir -p $(SYSROOT)/boot
+	cp $(OS) $(SYSROOT)/boot/
+
+
+dirs:
+	mkdir -p $(BUILD_DIR)
+	cp -R ./. $(BUILD_DIR)
+
 
 clean:
 	rm -r $(BUILD_DIR)
-
-

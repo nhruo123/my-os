@@ -11,6 +11,9 @@
 #define ICW4 0x01
 
 
+
+struct interrupt_frame; // TODO INIT THIS STRUCT VERY IMPORTENT
+
 /* init_pics()
  * init the PICs and remap them
  */
@@ -61,35 +64,25 @@ struct __attribute__((__packed__)) IDT_pointer {
 
 struct IDT_entry IDT[256];
 
-void div_by_zero_handler() {
-	__asm__("pushal");
-    
+__attribute__((interrupt)) void div_by_zero_handler(struct interrupt_frame *frame) {
     kprint("INT 0 was called! div by zero !!! \n");
 	master_eoi();
-
-    __asm__("popal; leave; iret"); /* BLACK MAGIC! */
-	
 }
 
-void irq0_handler() {
-	__asm__("pushal");
-    
+
+
+__attribute__((interrupt)) void irq0_handler(struct interrupt_frame *frame) 
+ {    
     kprint("INT 32");
 	master_eoi();
-
-    __asm__("popal; leave; iret"); /* BLACK MAGIC! */
-	
 }
 
-void irq1_handler() {
-	__asm__("pushal");
+__attribute__((interrupt)) void irq1_handler(struct interrupt_frame *frame) {
     unsigned char scan_code = inb(0x60);
     kprint("INT 33 was called keybord input code is: '");
     print_char(scan_code);
     kprint("'\n");
 	master_eoi();
-
-    __asm__("popal; leave; iret"); /* BLACK MAGIC! */
 }
 
 void load_itd(struct IDT_pointer idt_ptr) {

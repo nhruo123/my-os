@@ -116,6 +116,8 @@ void __attribute__ ((section(".bootstrap"))) init_bit_map(multiboot_info_t* mbt,
     uint32_t bootstrap_size = ((uint32_t)&_kernel_bootstrap_end - (uint32_t)&_kernel_bootstrap_start) / block_size;
     bootstrap_map((uint32_t)&_kernel_bootstrap_start,(uint32_t)&_kernel_bootstrap_start, bootstrap_size, pd); // maps bootsrap ljmp code
 
+    bootstrap_map(0xB8000,0xB8000, 1, pd); // maps bootsrap ljmp code
+
     asm("movl %0, %%eax; movl %%eax, %%cr3;"::"r"(pd));
 
     pmm_out = pmm + (uint32_t) &VIRT_BASE;

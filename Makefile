@@ -1,5 +1,6 @@
 BUILD_DIR=build
-OS=$(BUILD_DIR)/os/os.elf
+SYSROOT=sysroot
+OS:=$(SYSROOT)/boot/os.elf
 DISK_IMG=os.iso
 
 all: bootdisk
@@ -7,7 +8,11 @@ all: bootdisk
 .PHONY: directories bootdisk  os
 
 os:
-	make -C os
+	make -C os install-headers
+	make -C libc install-headers
+	make -C libc install-libs
+	make -C os install-kernel
+	
 
 bootdisk: os
 	mkdir -p isodir/boot/grub
@@ -22,6 +27,7 @@ qemu:
 clean:
 	make -C os clean
 	rm $(DISK_IMG)
+	rm -r $(SYSROOT)
 
-directories: 
-	mkdir -p $(BUILD_DIR)
+install-headers: 
+
