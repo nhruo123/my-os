@@ -4,7 +4,7 @@ SYSROOT := $(shell pwd)/../sysroot
 CC := i686-elf-gcc --sysroot="$(SYSROOT)" -isystem=/usr/include
 AR := i686-elf-ar
 
-CFLAGS +=-mgeneral-regs-only -O2 -g -ffreestanding -Wall -Wextra -D__is_libc -Iinclude
+CFLAGS +=-mgeneral-regs-only -O0 -g -ffreestanding -Wall -Wextra -D__is_libc -Iinclude
 LIBK_CFLAGS := $(CFLAGS) -D__is_libk
 
 BINARIES=$(BUILD_DIR)/libk.a

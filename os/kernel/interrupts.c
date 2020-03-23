@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "../screen/screen.h" 
+#include <stdio.h>
 #include "../IO/IO.h"
 
 #define PIC1_COMMAND 0x20

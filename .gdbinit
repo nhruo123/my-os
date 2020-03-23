@@ -10,6 +10,6 @@ set disassembly-flavor intel
 
 target remote localhost:26000
 symbol-file build/os/os.elf
-b init_bit_map
-b *0x1003bc
+#b init_bit_map
+#b *0x1003bc
 b main

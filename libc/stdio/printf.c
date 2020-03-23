@@ -3,16 +3,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <screen/screen.h>
 
-static bool print(const char* data, size_t length) {
-	const unsigned char* bytes = (const unsigned char*) data;
-	for (size_t i = 0; i < length; i++)
-		if (putchar(bytes[i]) == EOF)
-			return false;
-	return true;
-}
 
-int printf(const char* restrict format, ...) {
+int printf(const char* format, ...) {
     va_list parameters;
     va_start(parameters, format);
 
@@ -30,9 +24,7 @@ int printf(const char* restrict format, ...) {
             if(current_size > left_print_size) { 
                 return -1; // cant print more then max int chars
             }
-            if(!print(format, current_size)) { 
-                return -1; // put char retrun error
-            }  
+            terminal_write(format, current_size);
             format += current_size;
             written += current_size;
             continue;
@@ -72,9 +64,7 @@ int printf(const char* restrict format, ...) {
                     return -1;
                 }
 
-                if(!print(str, len)) {
-                    return -1;
-                }
+                terminal_write(format, len);
 
                 format++;
                 written += len;
@@ -85,9 +75,7 @@ int printf(const char* restrict format, ...) {
                     return -1;
                 }
 
-                if(!print(format, len)) {
-                    return -1;
-                }
+                terminal_write(format, len);
 
                 format += len;
                 written += len;

@@ -5,7 +5,7 @@ OS=$(BUILD_DIR)/os.elf
 CC := i686-elf-gcc --sysroot="$(SYSROOT)" -isystem=/usr/include
 AR := i686-elf-ar
 
-CFLAGS +=-mgeneral-regs-only -O2 -g -ffreestanding -Wall -Wextra -D__is_kernel -Iinclude
+CFLAGS +=-mgeneral-regs-only -O0 -g -ffreestanding -Wall -Wextra -D__is_kernel -Iinclude
 LIBS:=$(LIBS) -nostdlib -lk -lgcc
 C_OBJS :=$(shell find . -type f -name "*.c")
 ASM_OBJS := $(shell find . -type f -name "*.s")

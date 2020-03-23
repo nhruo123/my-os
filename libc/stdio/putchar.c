@@ -7,7 +7,7 @@
 int putchar(int chr) {
 #if defined(__is_libk)
 	char c = (char) chr;
-	kprint(c);
+	print_char(c);
 #else
 	// TODO: Implement stdio and the write system call.
 #endif
