@@ -59,13 +59,11 @@ static uint32_t mmap_get_first_free_frame() {
 }
 
 
-void pmmngr_init (size_t block_count, size_t block_size, uint32_t bitmap_adress) {
+void pmmngr_init (size_t block_count, size_t block_size, char * bitmap_adress) {
 	_mmngr_memory_size	= block_count * block_size;
-	_mmngr_memory_map	= (char *) bitmap_adress;
+	_mmngr_memory_map	= bitmap_adress;
 	_mmngr_block_count	= block_count;
 	_mmngr_block_size	= block_size;
- 
-	memset (_mmngr_memory_map, 0xf, block_count / block_size );
 }
 
 

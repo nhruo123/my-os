@@ -6,7 +6,7 @@
 
 #define OUT_OF_MEMORY 0;
 
-void pmmngr_init (size_t block_count, size_t block_size, uint32_t bitmap_adress);
+void pmmngr_init (size_t block_count, size_t block_size, char * bitmap_adress);
 
 void* pmmngr_alloc_blocks(size_t blocks);
 
