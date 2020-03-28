@@ -15,17 +15,16 @@
 # make space for stack pages
 .section .bss
 .align 16
+.global heap_start
+.global heap_end
+heap_start:
+.skip 65536 # 64 KiB
+heap_end:
+.align 16
 stack_bottom:
-.skip 16384 # 16 KiB
+.skip 65536 # 64 KiB
 stack_top:
 .global stack_top
-
-.section .bss
-.align 4096
-boot_page_directory:
-.skip  4096
-boot_page_table1:
-.skip 4096
 
 .section .data
 gdt:

@@ -6,6 +6,7 @@ set arch i8086 / set arch i386
 layout asm
 layout reg
 focus cmd
+layout src
 set disassembly-flavor intel
 
 target remote localhost:26000
