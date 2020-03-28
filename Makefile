@@ -21,8 +21,11 @@ bootdisk: os
 	grub-mkrescue -o $(DISK_IMG) isodir
 
 
-qemu:
+grub-qemu:
 	qemu-system-i386 -cdrom $(DISK_IMG) -gdb tcp::26000 -S
+
+qemu:
+	qemu-system-i386 -kernel $(OS) -gdb tcp::26000 -S
 
 clean:
 	make -C os clean
