@@ -9,5 +9,6 @@ void abort(void);
 
 void* malloc (size_t size);
 void free (void* ptr);
+char* itoa ( int value, char * str, int base );
 
 #endif

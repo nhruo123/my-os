@@ -10,6 +10,9 @@ void main(multiboot_info_t *mbd, char *pmm, int block_count, int block_size)
   terminalInit();
   pmmngr_init(block_count, block_size, pmm);
   printf("Hello world, from my kernal!\n");
+  printf("This is a digit: %d ,and onther one %d \n", 1234 , -1234);
+
+  printf("%%    %%Wow look %% a string %% %s and then a char %c \n", "1234" , '&');
 
   kprint("Starting init idt....\n");
 
@@ -26,10 +29,10 @@ void main(multiboot_info_t *mbd, char *pmm, int block_count, int block_size)
     free(ptr);
   }
 
-  void* block = pmmngr_alloc_block();
-  void* virt_addr = (void *)0x4000000;
+  void *block = pmmngr_alloc_block();
+  void *virt_addr = (void *)0x4000000;
 
-  vmmngr_alloc_page(virt_addr ,block, PRESENT_PAGE | READ_WRITE_PAGE);
+  vmmngr_alloc_page(virt_addr, block, PRESENT_PAGE | READ_WRITE_PAGE);
 
   ((char *)virt_addr)[0] = 'x';
 

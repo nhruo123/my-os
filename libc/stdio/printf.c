@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <screen/screen.h>
+#include <math.h>
 
 
 int printf(const char* format, ...) {
@@ -32,26 +33,28 @@ int printf(const char* format, ...) {
 
         if(format[0] == '%') {
             format++;
-            const char * formater_start = format[0]; // set the formater as the format char and leave the format as the rest 
+            const char * formater_start = format; // set the formater as the format char and leave the format as the rest 
 
             if(formater_start[0] == '%') {
-                if(putchar('%') == EOF) {
+                if (left_print_size < 1)
+                {
                     return -1;
                 }
-                if (left_print_size == 0) {
+                if (putchar('%') == EOF)
+                {
                     return -1;
                 }
-
                 written++;
                 format++;
             } else if (formater_start[0] == 'c') {
-                char c = (char) va_arg(parameters, int);
-                
-                
-                if(putchar(c) == EOF) {
+                char c = (char)va_arg(parameters, int);
+
+                if (left_print_size < 1)
+                {
                     return -1;
                 }
-                if (left_print_size == 0) {
+                if (putchar(c) == EOF)
+                {
                     return -1;
                 }
 
@@ -64,7 +67,21 @@ int printf(const char* format, ...) {
                     return -1;
                 }
 
-                terminal_write(format, len);
+                terminal_write(str, len);
+
+                format++;
+                written += len;
+            } else if (formater_start[0] == 'd') {
+                int int_to_print = va_arg(parameters, int);
+                char string_holder[50];
+                itoa(int_to_print, string_holder, 10);
+
+                size_t len = strlen(string_holder);
+                
+                if(left_print_size < len) {
+                    return -1;
+                }
+                terminal_write(string_holder, len);
 
                 format++;
                 written += len;
