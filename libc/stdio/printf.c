@@ -3,9 +3,23 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <screen/screen.h>
 #include <math.h>
 
+
+#if defined(__is_libk)
+#include <screen/screen.h>
+#endif
+
+
+
+
+static int terminal_write_wrapper(const char* data, size_t size) {
+#if defined(__is_libk)
+    terminal_write(data,size);
+#else
+    // TODO: SYS CALL to terminal write
+#endif
+}
 
 int printf(const char* format, ...) {
     va_list parameters;
@@ -25,7 +39,7 @@ int printf(const char* format, ...) {
             if(current_size > left_print_size) { 
                 return -1; // cant print more then max int chars
             }
-            terminal_write(format, current_size);
+            terminal_write_wrapper(format, current_size);
             format += current_size;
             written += current_size;
             continue;
@@ -67,7 +81,7 @@ int printf(const char* format, ...) {
                     return -1;
                 }
 
-                terminal_write(str, len);
+                terminal_write_wrapper(str, len);
 
                 format++;
                 written += len;
@@ -81,7 +95,7 @@ int printf(const char* format, ...) {
                 if(left_print_size < len) {
                     return -1;
                 }
-                terminal_write(string_holder, len);
+                terminal_write_wrapper(string_holder, len);
 
                 format++;
                 written += len;
@@ -92,7 +106,7 @@ int printf(const char* format, ...) {
                     return -1;
                 }
 
-                terminal_write(format, len);
+                terminal_write_wrapper(format, len);
 
                 format += len;
                 written += len;
