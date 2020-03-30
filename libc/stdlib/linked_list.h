@@ -1,3 +1,6 @@
+#ifndef _LINKED_LIST_H
+#define _LINKED_LIST_H 1
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -15,3 +18,4 @@ void set_head_to_space(struct ListNode * head);
 struct ListNode * add_free_region(struct ListNode * previous_head, uint32_t adress, size_t size);
 struct ListNode * find_region(struct ListNode ** out_head_pointer, size_t size);
 
+#endif

@@ -1,7 +1,9 @@
 #include <math.h>
 #include <stdlib.h>
+
+#define POW2(x) (1 << (x))
 #define LOG2 0.6931471805
-#define LN10 2.3025850929940456840179914546844
+#define LN10 2.3025850929
 
 static int most_sig_bit(int n)
 {
@@ -32,7 +34,7 @@ double log(double x)
     // 2n≤x≤2n+1, ln(x)=nln(2)+ln(x/2n).
     int _bit;
     _bit = most_sig_bit((int)x);
-    return _bit * LOG2 + my_ln(x/POW2(_bit));
+    return _bit * LOG2 + log(x/POW2(_bit));
  
 }
 

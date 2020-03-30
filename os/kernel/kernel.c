@@ -1,8 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
+
 #include <mmnger/mmnger_virtual.h>
 #include <mmnger/mmnger_phys.h>
-#include <stdlib.h>
-#include "interrupts.h"
+#include <interrupts/interrupts.h>
+#include <interrupts/isr.h>
+
+#include "../keyboard/keyboard.h"
 #include "../multiboot.h"
 
 void main(multiboot_info_t *mbd, char *pmm, int block_count, int block_size)
@@ -17,6 +21,8 @@ void main(multiboot_info_t *mbd, char *pmm, int block_count, int block_size)
   kprint("Starting init idt....\n");
 
   init_idt();
+  
+  register_interrupt_handler(33, &keyboard_call);
 
   kprint("Done init idt\n");
 

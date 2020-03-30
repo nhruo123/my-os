@@ -1,12 +1,13 @@
 BUILD_DIR=../build/os
 SYSROOT := $(shell pwd)/../sysroot
 OS=$(BUILD_DIR)/os.elf
+LIBK=$
 
 CC := i686-elf-gcc --sysroot="$(SYSROOT)" -isystem=/usr/include
 AR := i686-elf-ar
 
-CFLAGS +=-mgeneral-regs-only -O0 -g -ffreestanding -Wall -Wextra -D__is_kernel -Iinclude
-LIBS:=$(LIBS) -nostdlib -lk -lgcc
+CFLAGS +=-O0 -g -ffreestanding -Wall -Wextra -D__is_kernel -Iinclude 
+LIBS:=$(LIBS) -lk -nostdlib -lgcc
 C_OBJS :=$(shell find . -type f -name "*.c")
 ASM_OBJS := $(shell find . -type f -name "*.s")
 C_OBJS := $(C_OBJS:.%.c=$(BUILD_DIR)%.o)
@@ -20,7 +21,7 @@ OBJS := $(C_OBJS) $(ASM_OBJS)
 all: $(OS)
 
 $(OS): $(OBJS) os.lds
-	$(CC) -T os.lds -o $@ $(CFLAGS) $(OBJS) $(LIBS)
+	$(CC) $(OBJS) -T os.lds -o $@ $(CFLAGS) $(LIBS)
 	grub-file --is-x86-multiboot $@
 
 
