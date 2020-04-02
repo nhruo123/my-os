@@ -11,6 +11,7 @@ SECTIONS
 	.boot : ALIGN(4k) {
 		*(.multiboot)
 		*(.bootstrap)
+		*(.bootstrap.bss)
 		*(.bootstrap.*)
 		. = ALIGN(4k);
 	}

@@ -1,4 +1,6 @@
 #include <stdint.h>
+#include <stdlib.h>
+
 #include "../multiboot.h"
 
 
@@ -14,15 +16,15 @@ extern uint32_t * VIRT_BASE;
 extern uint32_t * _kernel_start;
 extern uint32_t * _kernel_bootstrap_start;
 extern uint32_t * _kernel_bootstrap_end;
+extern uint32_t bootstrap_heap_start;
+extern uint32_t bootstrap_heap_end;
 
 typedef struct my_memory_map {
 	uint32_t size;
 	uint32_t base_addr_low,base_addr_high;
 	uint32_t length_low,length_high;
 	uint32_t type;
-} my_memory_map_t ;
-
-typedef my_memory_map_t mmap_entry_t;
+} mmap_entry_t ;
 
 uint8_t * pmm __attribute__ ((section(".bootstrap.data"))) = 0;
 uint32_t block_count __attribute__ ((section(".bootstrap.data"))) = 0;
@@ -69,14 +71,31 @@ void __attribute__ ((section(".bootstrap"))) bootstrap_map(uint32_t physical_adr
 }
 
 void __attribute__ ((section(".bootstrap"))) init_bit_map(multiboot_info_t* mbt, char * pmm_out, int block_count_out, int block_size_out) {
-    block_count = (((mbt->mem_lower) + (mbt->mem_upper)) * 1024) / block_size;
-    uint32_t alligned_kernel_physical_end =  &_kernel_physical_end;
+    heap_t static_heap = { 0 };
+    static_heap.is_kernel_only = true;
+    static_heap.is_read_only = false;
+    static_heap.start_address = &bootstrap_heap_start;
+    static_heap.end_address = &bootstrap_heap_end;
 
-    while ((alligned_kernel_physical_end & 0xfff) != 0)
-        alligned_kernel_physical_end++;
+    // Calls self_map_heap with VIRT_BASE offset
+    heap_t * self_mapped_heap = ((heap_t *(*)(heap_t))(self_map_heap - (uint32_t)&VIRT_BASE))(static_heap);
 
-    pmm = (uint8_t *) alligned_kernel_physical_end;
+    // TODO: this block_count is supose to be the max memmory adress represented in blocks of 4k but its not the right calc
+    block_count = ((1024 * 1024 + (mbt->mem_upper)) * 1024) / block_size;
 
+    // allocate space for pmm with malloc from the real adress of the function before mapping
+    multiboot_info_t *new_mbt = ((multiboot_info_t * (*)(size_t, heap_t))(malloc - (uint32_t)&VIRT_BASE)(sizeof(multiboot_info_t), &self_mapped_heap));
+
+    // allocate space for pmm with malloc from the real adress of the function before mapping
+    uint8_t * pmm = ((uint8_t *(*)(size_t, heap_t))(malloc - (uint32_t)&VIRT_BASE)(block_count / 8, &self_mapped_heap));
+
+    // memcopy mbt to new mbt
+    for (size_t i = 0; i < sizeof(multiboot_info_t); i++) {
+        ((char *)new_mbt)[i] = ((char *)mbt)[i];
+    }
+    
+
+    // memset to pmm to all bytes 1
     for(uint32_t i = 0; i < block_count / 8; i++) {
         pmm[i] = 0xFF;
     }
@@ -94,7 +113,7 @@ void __attribute__ ((section(".bootstrap"))) init_bit_map(multiboot_info_t* mbt,
 	}
 
 	uint32_t kernel_address = ((uint32_t) &_kernel_physical_start) / block_size;
-	uint32_t kernel_blocks = (alligned_kernel_physical_end - (uint32_t) &_kernel_physical_start + block_count) / block_size;
+	uint32_t kernel_blocks = ((uint32_t)&_kernel_physical_end - (uint32_t) &_kernel_physical_start /* + block_count */ ) / block_size;
 
     for (uint32_t i = 0 ; i <= kernel_blocks; i++) {
         mmap_set(kernel_address + i);
@@ -120,8 +139,8 @@ void __attribute__ ((section(".bootstrap"))) init_bit_map(multiboot_info_t* mbt,
 
     asm("movl %0, %%eax; movl %%eax, %%cr3;"::"r"(pd));
 
-    pmm_out = pmm + (uint32_t) &VIRT_BASE;
+    mbt = new_mbt;
+    pmm_out = pmm;
     block_count_out = block_count;
     block_size_out = block_size;
-
 }

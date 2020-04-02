@@ -1,3 +1,13 @@
+.section .bootstrap.bss
+.align 16
+.global bootstrap_heap_start
+.global bootstrap_heap_end
+bootstrap_heap_start:
+.skip 65536 # 64 KiB
+bootstrap_heap_end:
+
+
+
 .section .bootstrap
 .global _bootstrap_start
 .type _bootstrap_start, @function
