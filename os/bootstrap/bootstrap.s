@@ -18,6 +18,7 @@ _bootstrap_start:
     pushl %ebx
     pushl %ebx
     pushl %ebx
+    pushl %ebx
 
     call init_bit_map
 

@@ -9,7 +9,7 @@
 #include "../keyboard/keyboard.h"
 #include "../multiboot.h"
 
-void main(multiboot_info_t *mbt, char *pmm, int block_count, int block_size) {
+void main(multiboot_info_t *mbt, heap_t * bootstrap_heap, char *pmm, int block_count, int block_size) {
 	terminalInit();
 	pmmngr_init(block_count, block_size, pmm);
 	printf("Hello world, from my kernal!\n");
@@ -25,36 +25,18 @@ void main(multiboot_info_t *mbt, char *pmm, int block_count, int block_size) {
 
 	kprint("Done init idt\n");
 
-	extern uint32_t heap_start;
-	extern uint32_t heap_end;
 
-	heap_t static_heap;
-	static_heap.start_address = &heap_start;
-	static_heap.end_address = &heap_end;
-	static_heap.is_heap_static = true;
+	void * ptr1 =  malloc(1, bootstrap_heap);
+	void * ptr2 =  malloc(1, bootstrap_heap);
+	void * ptr3 =  malloc(1, bootstrap_heap);
+	void * ptr4 =  malloc(1, bootstrap_heap);
 
-	heap_t * self_maped_heap = self_map_heap(static_heap);
+	free(ptr1, bootstrap_heap);
+	free(ptr2, bootstrap_heap);
+	free(ptr4, bootstrap_heap);
+	free(ptr3, bootstrap_heap);
 
-	// size_t loop = 100;
-	// for (size_t i = 0; i < loop; i++)
-	// {
-	// 	void *ptr = malloc(sizeof(char), self_maped_heap);
-	// 	void *ptr_hw = malloc(sizeof(uint16_t), self_maped_heap);
-	// 	*(char *)ptr = 'x';
-	// 	free(ptr, self_maped_heap);
-	// }
-
-	void * ptr1 =  malloc(1, self_maped_heap);
-	void * ptr2 =  malloc(1, self_maped_heap);
-	void * ptr3 =  malloc(1, self_maped_heap);
-	void * ptr4 =  malloc(1, self_maped_heap);
-
-	free(ptr1, self_maped_heap);
-	free(ptr2, self_maped_heap);
-	free(ptr4, self_maped_heap);
-	free(ptr3, self_maped_heap);
-
-	void * ptr5 =  malloc(4, self_maped_heap);
+	void * ptr5 =  malloc(4, bootstrap_heap);
 
 
 	void *block = pmmngr_alloc_block();

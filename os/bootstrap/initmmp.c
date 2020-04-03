@@ -70,7 +70,7 @@ void __attribute__ ((section(".bootstrap"))) bootstrap_map(uint32_t physical_adr
     }
 }
 
-void __attribute__ ((section(".bootstrap"))) init_bit_map(multiboot_info_t* mbt, char * pmm_out, int block_count_out, int block_size_out) {
+void __attribute__ ((section(".bootstrap"))) init_bit_map(multiboot_info_t* mbt, heap_t * bootstrap_heap_out, char * pmm_out, int block_count_out, int block_size_out) {
     heap_t static_heap = { 0 };
     static_heap.is_kernel_only = true;
     static_heap.is_read_only = false;
@@ -80,16 +80,16 @@ void __attribute__ ((section(".bootstrap"))) init_bit_map(multiboot_info_t* mbt,
     static_heap.end_address = &bootstrap_heap_end;
 
     // Calls self_map_heap with VIRT_BASE offset
-    heap_t * self_mapped_heap = ((heap_t *(*)(heap_t))(self_map_heap - (uint32_t)&VIRT_BASE))(static_heap);
+    heap_t * self_mapped_heap = ((heap_t *(*)(heap_t))((void *)self_map_heap - (void *)&VIRT_BASE))(static_heap);
 
     // TODO: this block_count is supose to be the max memmory adress represented in blocks of 4k but its not the right calc
     block_count = ((1024 * 1024 + (mbt->mem_upper)) * 1024) / block_size;
 
     // allocate space for pmm with malloc from the real adress of the function before mapping
-    multiboot_info_t *new_mbt = ((multiboot_info_t * (*)(size_t, heap_t))(malloc - (uint32_t)&VIRT_BASE)(sizeof(multiboot_info_t), &self_mapped_heap));
+    multiboot_info_t *new_mbt = ((multiboot_info_t * (*)(size_t, heap_t *))((void *)malloc - (void *)&VIRT_BASE))(sizeof(multiboot_info_t), self_mapped_heap);
 
     // allocate space for pmm with malloc from the real adress of the function before mapping
-    uint8_t * pmm = ((uint8_t *(*)(size_t, heap_t))(malloc - (uint32_t)&VIRT_BASE)(block_count / 8, &self_mapped_heap));
+    uint8_t * pmm = ((uint8_t *(*)(size_t, heap_t *))((void *)malloc - (void *)&VIRT_BASE))(block_count / 8, self_mapped_heap);
 
     // memcopy mbt to new mbt
     for (size_t i = 0; i < sizeof(multiboot_info_t); i++) {
@@ -142,6 +142,7 @@ void __attribute__ ((section(".bootstrap"))) init_bit_map(multiboot_info_t* mbt,
     asm("movl %0, %%eax; movl %%eax, %%cr3;"::"r"(pd));
 
     mbt = new_mbt;
+    bootstrap_heap_out = self_mapped_heap;
     pmm_out = pmm;
     block_count_out = block_count;
     block_size_out = block_size;
