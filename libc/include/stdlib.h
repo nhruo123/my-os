@@ -11,12 +11,18 @@ typedef struct list_node_s {
     struct ListNode* next;
 } list_node_t;
 
+typedef struct node_footer_s {
+    list_node_t * node;
+} node_footer_t;
+
 typedef struct heap_s {
     list_node_t * start_node;
     void* start_address;
     void* end_address;
+    void* max_end_address;
     bool is_kernel_only;
     bool is_read_only;
+    bool is_heap_static;
 } heap_t;
 
 __attribute__((__noreturn__))

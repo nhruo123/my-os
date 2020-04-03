@@ -5,14 +5,14 @@
 #include "linked_list.h"
 
 static bool is_region_good_for_alloc(list_node_t * node, size_t size) {
-    size_t alloc_size = size + sizeof(list_node_t);
-    size_t leftover = node->size - size;
+    size_t alloc_size = size + sizeof(list_node_t) + sizeof(node_footer_t);
+    size_t leftover = node->size - size - sizeof(node_footer_t);
 
     if(node->size < size) {
         return false;
     }
 
-    if(leftover > 0 && leftover <= sizeof(list_node_t)) {
+    if(leftover > 0 && leftover <= (sizeof(list_node_t) + sizeof(node_footer_t))) {
         return false;
     }
 
@@ -44,6 +44,10 @@ list_node_t * find_region(list_node_t ** out_head_pointer, size_t size) {
 
 list_node_t * add_free_region(list_node_t * previous_head, uint32_t address, size_t size) {
     list_node_t * new_head = (void *)address;
+    node_footer_t * new_footer = (void *)address + size + sizeof(list_node_t);
+
+    new_footer->node = new_head;
+
     new_head->is_free = true;
     new_head->size = size;
     new_head->next = previous_head;
@@ -51,6 +55,23 @@ list_node_t * add_free_region(list_node_t * previous_head, uint32_t address, siz
     return new_head;
 }
 
+list_node_t * skip_node(list_node_t * head_node, list_node_t * node_to_skip) {
+    list_node_t * current = head_node;
+    list_node_t * next = current->next;
+
+    if(head_node == node_to_skip) {
+        return head_node->next;
+    }
+    
+    while(next != node_to_skip) {
+        current = current->next;
+        next = current->next;
+    }
+
+    current->next = next->next;
+
+    return head_node;
+}
 
 
 

@@ -74,6 +74,8 @@ void __attribute__ ((section(".bootstrap"))) init_bit_map(multiboot_info_t* mbt,
     heap_t static_heap = { 0 };
     static_heap.is_kernel_only = true;
     static_heap.is_read_only = false;
+    static_heap.is_heap_static = true;
+    static_heap.max_end_address = &bootstrap_heap_end;
     static_heap.start_address = &bootstrap_heap_start;
     static_heap.end_address = &bootstrap_heap_end;
 

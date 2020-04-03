@@ -31,17 +31,31 @@ void main(multiboot_info_t *mbt, char *pmm, int block_count, int block_size) {
 	heap_t static_heap;
 	static_heap.start_address = &heap_start;
 	static_heap.end_address = &heap_end;
+	static_heap.is_heap_static = true;
 
 	heap_t * self_maped_heap = self_map_heap(static_heap);
 
-	size_t loop = 100;
-	for (size_t i = 0; i < loop; i++)
-	{
-		void *ptr = malloc(sizeof(char), self_maped_heap);
-		void *ptr_hw = malloc(sizeof(uint16_t), self_maped_heap);
-		*(char *)ptr = 'x';
-		free(ptr, self_maped_heap);
-	}
+	// size_t loop = 100;
+	// for (size_t i = 0; i < loop; i++)
+	// {
+	// 	void *ptr = malloc(sizeof(char), self_maped_heap);
+	// 	void *ptr_hw = malloc(sizeof(uint16_t), self_maped_heap);
+	// 	*(char *)ptr = 'x';
+	// 	free(ptr, self_maped_heap);
+	// }
+
+	void * ptr1 =  malloc(1, self_maped_heap);
+	void * ptr2 =  malloc(1, self_maped_heap);
+	void * ptr3 =  malloc(1, self_maped_heap);
+	void * ptr4 =  malloc(1, self_maped_heap);
+
+	free(ptr1, self_maped_heap);
+	free(ptr2, self_maped_heap);
+	free(ptr4, self_maped_heap);
+	free(ptr3, self_maped_heap);
+
+	void * ptr5 =  malloc(4, self_maped_heap);
+
 
 	void *block = pmmngr_alloc_block();
 	void *virt_addr = (void *)0x4000000;
