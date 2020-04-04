@@ -68,6 +68,11 @@ void vmmngr_alloc_page (void* virtualaddr, void* physaddr, uint16_t flags) {
     flushTLB();
 }
 
+void vmmngr_alloc_page_and_phys (void* virtualaddr, uint16_t flags) {
+    void* pmem = pmmngr_alloc_block();
+    vmmngr_alloc_page(virtualaddr, pmem, flags);
+}
+
 void vmmngr_free_page (void* virtualaddr) {
     if(! vmmngr_test_is_page_mapped(virtualaddr)) {
         return;
@@ -80,4 +85,9 @@ void vmmngr_free_page (void* virtualaddr) {
 
     PT[pt_index] = PT[pt_index] & (~ PRESENT_PAGE);
     flushTLB();
+}
+
+void vvmmngr_free_page_and_phys (void* virtualaddr) {
+    pmmngr_free_block(get_physaddr(virtualaddr));
+    vmmngr_free_page(virtualaddr);
 }
