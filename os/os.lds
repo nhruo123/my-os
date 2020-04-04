@@ -19,8 +19,8 @@ SECTIONS
 	_kernel_bootstrap_end = .;
 
 
-
 	. = . + VIRT_BASE;
+	. = ALIGN(4k);
 	_kernel_start = . ;
 	_kernel_physical_start = _kernel_start - VIRT_BASE;
 

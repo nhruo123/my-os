@@ -26,6 +26,8 @@ _bootstrap_start:
 	orl $0x80010000, %ecx
 	movl %ecx, %cr0
 
+    
+
     leal _higher_half , %eax
     jmp *%eax
 .end:

@@ -9,7 +9,7 @@
 #include "../keyboard/keyboard.h"
 #include "../multiboot.h"
 
-void main(multiboot_info_t *mbt, heap_t * bootstrap_heap, char *pmm, int block_count, int block_size) {
+void main(multiboot_info_t * mbt, heap_t * bootstrap_heap, char * pmm, uint32_t block_count, uint32_t block_size) {
 	terminalInit();
 	pmmngr_init(block_count, block_size, pmm);
 	printf("Hello world, from my kernal!\n");
@@ -28,9 +28,9 @@ void main(multiboot_info_t *mbt, heap_t * bootstrap_heap, char *pmm, int block_c
 	extern uint32_t _kernel_end;
 	heap_t kernel_heap_def = {0};
 	kernel_heap_def.start_node = NULL;
-	kernel_heap_def.start_address = &_kernel_end + PAGE_SIZE * 1000;
+	kernel_heap_def.start_address = &_kernel_end;
 	kernel_heap_def.end_address = kernel_heap_def.start_address;
-	kernel_heap_def.max_end_address = kernel_heap_def.end_address + PAGE_SIZE * 1024;
+	kernel_heap_def.max_end_address = kernel_heap_def.end_address + (PAGE_SIZE * 1024) * 10;
 	kernel_heap_def.is_read_only = false;
 	kernel_heap_def.is_kernel_only = true;
 	kernel_heap_def.is_heap_static = false;

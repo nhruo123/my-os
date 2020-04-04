@@ -1,8 +1,4 @@
-define hook-stop
-    # Translate the segment:offset into a physical address
-    printf "[%4x:%4x] ", $cs, $eip
-end
-set arch i8086 / set arch i386
+#set arch i8086 / set arch i386
 layout asm
 layout reg
 focus cmd

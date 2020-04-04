@@ -66,6 +66,10 @@ gdt_desc:
 .type _higher_half, @function
 _higher_half:
 
+	movl $stack_top , %esp
+	 subl $20, %esp # we pass 5 parameters into the main function so we do (5 * 4)
+
+
 	lgdt gdt_desc
 	
 	ljmp $0x08, $._flush_cs
