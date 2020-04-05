@@ -4,28 +4,60 @@
 #include <stdbool.h>
 #include "linked_list.h"
 
-static bool is_region_good_for_alloc(list_node_t * node, size_t size) {
-    size_t alloc_size = size + sizeof(list_node_t) + sizeof(node_footer_t);
-    size_t leftover = node->size - size - sizeof(node_footer_t);
+static bool is_region_good_for_alloc(list_node_t *node, size_t size, size_t alignment)
+{
+    uint32_t offset = find_alligned_node_offset(node, alignment);
 
-    if(node->size < size) {
+    // TODO TEST FOR OVERFLOW
+    if (offset + size > node->size)
+    {
         return false;
     }
 
-    if(leftover > 0 && leftover <= (sizeof(list_node_t) + sizeof(node_footer_t))) {
+    size_t front_leftover = node->size - offset - size;
+
+    if (front_leftover > 0 && front_leftover < (sizeof(list_node_t) + sizeof(node_footer_t)))
+    {
+        return false;
+    }
+
+    size_t back_leftover = offset;
+
+    if (back_leftover > 0 && back_leftover < (sizeof(list_node_t) + sizeof(node_footer_t)))
+    {
         return false;
     }
 
     return true;
 }
 
-list_node_t * find_region(list_node_t ** out_head_pointer, size_t size) {
+// TODO change to ofir's formula
+// (allign - 1)-(x-1)%allign
+uint32_t find_alligned_node_offset(list_node_t *node, size_t alignment) {
+    uint32_t usable_mem = ((uint32_t)node + sizeof(list_node_t));
+
+    uint32_t aligned_mem;
+    if ((usable_mem % alignment) == 0)
+    {
+        aligned_mem = usable_mem;
+    }
+    else
+    {
+        aligned_mem = usable_mem + (alignment - (usable_mem % alignment));
+    }
+
+    uint32_t offset = aligned_mem - usable_mem;
+
+    return offset;
+}
+
+list_node_t * find_region(list_node_t ** out_head_pointer, size_t size, size_t alignment) {
     list_node_t ** next_pointer_of_prev = out_head_pointer;
     list_node_t * current = *next_pointer_of_prev;
     list_node_t * next = current->next;
-    
-    while(current != NULL) {
-        if(is_region_good_for_alloc(current, size)) {
+
+        while(current != NULL) {
+        if(is_region_good_for_alloc(current, size , alignment)) {
             *next_pointer_of_prev = next; // skip current
             current->next = NULL;
             return current;

@@ -42,19 +42,63 @@ void main(multiboot_info_t * mbt, heap_t * bootstrap_heap, char * pmm, uint32_t 
 
 	pmmngr_init(block_count, block_size, new_pmm);
 
-	void * ptr1 =  malloc(1, kernel_heap);
-	void * ptr2 =  malloc(1, kernel_heap);
-	void * ptr3 =  malloc(1, kernel_heap);
-	void * ptr4 =  malloc(1, kernel_heap);
+	terminalInit();
+	print_heap(kernel_heap);
+	
+
+
+	void * ptr1 = malloc(1, kernel_heap);
+	void * ptr2 = malloc(1, kernel_heap);
+	void * ptr3 = malloc(1, kernel_heap);
+	void * ptr4 = malloc(1, kernel_heap);
+
+	terminalInit();
+	print_heap(kernel_heap);
+	
 
 	free(ptr1, kernel_heap);
 	free(ptr2, kernel_heap);
 	free(ptr4, kernel_heap);
 	free(ptr3, kernel_heap);
 
-	void * ptr5 =  malloc(4, kernel_heap);
+	terminalInit();
+	print_heap(kernel_heap);
 
-	void * ptr6 =  malloc(PAGE_SIZE * 3, kernel_heap);
+	void * ptr5 = malloc(4, kernel_heap);
+
+	terminalInit();
+	print_heap(kernel_heap);
+
+	void * ptr6 = malloc(PAGE_SIZE * 3, kernel_heap);
+
+	terminalInit();
+	print_heap(kernel_heap);
+
+	void * ptr7 = aligned_malloc(8, 8, kernel_heap);
+
+	terminalInit();
+	print_heap(kernel_heap);
+	
+
+	void * ptr8 = aligned_malloc(8, 0x1000, kernel_heap);
+
+	terminalInit();
+	print_heap(kernel_heap);
+
+	free(ptr5, kernel_heap);
+	free(ptr6, kernel_heap);
+	free(ptr7, kernel_heap);
+	free(ptr8, kernel_heap);
+
+	terminalInit();
+	print_heap(kernel_heap);
+
+	void * ptr9 = malloc(1, kernel_heap);
+
+	terminalInit();
+	print_heap(kernel_heap);
+
+	
 
 
 	void *block = pmmngr_alloc_block();

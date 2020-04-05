@@ -99,6 +99,20 @@ int printf(const char* format, ...) {
 
                 format++;
                 written += len;
+            } else if (formater_start[0] == 'x') {
+                int int_to_print = va_arg(parameters, int);
+                char string_holder[50];
+                utoa(int_to_print, string_holder, 16);
+
+                size_t len = strlen(string_holder);
+                
+                if(left_print_size < len) {
+                    return -1;
+                }
+                terminal_write_wrapper(string_holder, len);
+
+                format++;
+                written += len;
             } else { // unsuported or bad formating
                 size_t len = strlen(format);
 

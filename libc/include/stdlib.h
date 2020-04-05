@@ -30,7 +30,9 @@ void abort(void);
 
 heap_t * self_map_heap(heap_t heap);
 void* malloc (size_t size, heap_t * heap);
+void *aligned_malloc(size_t size, size_t alignment, heap_t *heap);
 void free (void* ptr, heap_t * heap);
 char* itoa ( int value, char * str, int base );
+char* utoa ( unsigned int value, char * str, int base );
 
 #endif

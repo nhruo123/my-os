@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <mmnger/mmnger_virtual.h>
 #include "linked_list.h"
 
@@ -24,7 +25,8 @@ static void combine_nodes(list_node_t *first, list_node_t *second, heap_t *heap)
     heap->start_node = add_free_region(heap->start_node, first, first->size);
 }
 
-static try_combine_adjacent_nodes(heap_t * heap, list_node_t * node_to_combine) {
+static try_combine_adjacent_nodes(heap_t *heap, list_node_t *node_to_combine)
+{
     list_node_t *next_adjacent_block = (void *)node_to_combine + node_to_combine->size + sizeof(list_node_t) + sizeof(node_footer_t);
     if (next_adjacent_block < heap->end_address && next_adjacent_block->is_free)
     {
@@ -43,13 +45,16 @@ static try_combine_adjacent_nodes(heap_t * heap, list_node_t * node_to_combine) 
     }
 }
 
-static void add_page_to_heap(heap_t *heap) {
+static void add_page_to_heap(heap_t *heap)
+{
     uint16_t flags = PRESENT_PAGE;
 
-    if(!heap->is_kernel_only) {
+    if (!heap->is_kernel_only)
+    {
         flags = flags | USER_PAGE;
     }
-    if(!heap->is_read_only) {
+    if (!heap->is_read_only)
+    {
         flags = flags | READ_WRITE_PAGE;
     }
 
@@ -62,7 +67,8 @@ static void add_page_to_heap(heap_t *heap) {
 
 heap_t *self_map_heap(heap_t heap)
 {
-    if(heap.end_address - heap.start_address == 0) {
+    if (heap.end_address - heap.start_address == 0)
+    {
         add_page_to_heap(&heap);
     }
     heap.start_node = add_free_region(NULL, heap.start_address, heap.end_address - heap.start_address - sizeof(list_node_t) - sizeof(node_footer_t));
@@ -73,40 +79,70 @@ heap_t *self_map_heap(heap_t heap)
     return (heap_t *)new_heap_location;
 }
 
-void *malloc(size_t size, heap_t *heap)
+void *aligned_malloc(size_t size, size_t alignment, heap_t *heap)
 {
-    list_node_t *head = heap->start_node;
-    list_node_t *free_node = find_region(&head, size);
-    
+    if (alignment % 4 != 0)
+    {
+        abort();
+    }
+
+    if (size % 4 != 0)
+    {
+        size += 4 - (size % 4);
+    }
+
+    list_node_t *free_node = find_region(&heap->start_node, size, alignment);
 
     if (free_node == NULL)
     {
-        if(!heap->is_heap_static && heap->max_end_address > heap->end_address) {
+        if (!heap->is_heap_static && heap->max_end_address > heap->end_address)
+        {
             add_page_to_heap(heap);
-            return malloc(size, heap);
+            return aligned_malloc(size, alignment, heap);
         }
         return NULL;
     }
 
+    uint32_t offset = find_alligned_node_offset(free_node, alignment);
 
-    free_node->is_free = false;
+    
+    list_node_t free_node_copy = {0};
+    memcpy(&free_node_copy, free_node, sizeof(list_node_t));
 
-    void *return_addr = (void *)free_node + sizeof(list_node_t);
-
-    // if no memmory dose not fit exectly we split it into smaller parts
-    if (size != free_node->size)
+    // If there is offset we need to create a back block
+    if (offset > 0)
     {
-        head = add_free_region(head, return_addr + size + sizeof(node_footer_t), free_node->size - size - sizeof(list_node_t) - sizeof(node_footer_t));
-        free_node->size = size;
+        heap->start_node = add_free_region(
+            heap->start_node,
+            (void *)free_node,
+            offset - sizeof(list_node_t) - sizeof(node_footer_t));
     }
 
+    // if there is left over memory we need to create a front block
+    if ((free_node_copy.size - offset - size) != 0)
+    {
+        heap->start_node = add_free_region(
+            heap->start_node,
+            (void *)free_node + offset + size + sizeof(node_footer_t) + sizeof(list_node_t),
+            free_node_copy.size - size - offset - sizeof(list_node_t) - sizeof(node_footer_t));
+    }
+
+    // modifiy the block itself
+    free_node = ((void *)free_node) + offset;
+    free_node->is_free = false;
+    free_node->size = size;
+
     // modifiy footer of the malloced block
-    node_footer_t *free_node_footer = (void *)free_node + free_node->size + sizeof(list_node_t);
+    // Offset is already added by free_node init
+    node_footer_t *free_node_footer = (void *)free_node + size + sizeof(list_node_t);
     free_node_footer->node = free_node;
 
-    heap->start_node = head;
+    return (void *)free_node + sizeof(list_node_t);
+}
 
-    return return_addr;
+void *malloc(size_t size, heap_t *heap)
+{
+    aligned_malloc(size, 4, heap);
 }
 
 void free(void *ptr, heap_t *heap)
@@ -118,5 +154,37 @@ void free(void *ptr, heap_t *heap)
 
     // try to combine next adjacent block
     try_combine_adjacent_nodes(heap, heap->start_node);
+}
+
+void print_heap(heap_t *heap)
+{
     
+    printf("heap = 0x%x = {start_address: 0x%x , end_address: 0x%x , max_end_address: 0x%x , is_kernel_only: %d , is_read_only: %d , is_heap_static: %d } \n",
+     (uint32_t)heap, (uint32_t)heap->start_address, (uint32_t)heap->end_address,
+     (uint32_t)heap->max_end_address, (uint32_t)heap->is_kernel_only ,
+     (uint32_t)heap->is_read_only , (uint32_t)heap->is_heap_static);
+
+    printf("\n");
+    size_t index = 0;
+    list_node_t * node = heap->start_node;
+    
+
+    while (node != NULL)
+    {
+        node_footer_t * footer = (void *)node + node->size + sizeof(list_node_t);
+        if (footer->node != node)
+        {
+            printf("ERROR FOOTER ISNT POINTING TO NODE \n");
+        }
+
+        printf("node(%d) = 0x%x{ size: %d , is_free: %d , next: 0x%x  } \n", 
+        index, (uint32_t)node, node->size, (uint32_t)node->is_free, (uint32_t)node->next);
+        printf("\n");
+
+        printf("footer(%d) = 0x%x{ node: 0x%x  } \n", index, (uint32_t)footer, footer->node);
+        printf("\n");
+
+        node = node->next;
+        index++;
+    }
 }
