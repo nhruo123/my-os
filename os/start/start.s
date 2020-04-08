@@ -17,20 +17,6 @@
 	.long 80 # width
 	.long 25 # height
 	.long 0 # depth
- 
-# make space for stack pages
-.section .bss
-.align 16
-.global heap_start
-.global heap_end
-heap_start:
-.skip 65536 # 64 KiB
-heap_end:
-.align 16
-stack_bottom:
-.skip 65536 # 64 KiB
-stack_top:
-.global stack_top
 
 .section .data
 gdt:
@@ -66,8 +52,8 @@ gdt_desc:
 .type _higher_half, @function
 _higher_half:
 
-	movl $stack_top , %esp
-	subl $20, %esp # we pass 5 parameters into the main function so we do (5 * 4)
+	# movl $stack_top , %esp
+	# subl $20, %esp # we pass 5 parameters into the main function so we do (5 * 4)
 
 
 	lgdt gdt_desc

@@ -12,6 +12,7 @@
 void main(multiboot_info_t * mbt, heap_t * bootstrap_heap, char * pmm, uint32_t block_count, uint32_t block_size) {
 	terminalInit();
 	pmmngr_init(block_count, block_size, pmm);
+	init_vmmngr();
 	printf("Hello world, from my kernal!\n");
 	printf("This is a digit: %d ,and onther one %d \n", 1234, -1234);
 
