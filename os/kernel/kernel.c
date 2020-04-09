@@ -3,21 +3,24 @@
 
 #include <mmnger/mmnger_virtual.h>
 #include <mmnger/mmnger_phys.h>
+#include <mmnger/context_management.h>
 #include <interrupts/interrupts.h>
 #include <interrupts/isr.h>
 
 #include "../keyboard/keyboard.h"
 #include "../multiboot.h"
 
-void main(multiboot_info_t * mbt, heap_t * bootstrap_heap, char * pmm, uint32_t block_count, uint32_t block_size) {
-	terminalInit();
+void main(multiboot_info_t *mbt, heap_t *bootstrap_heap, char *pmm, uint32_t block_count, uint32_t block_size)
+{
+	// init base memmory mangemnt
 	pmmngr_init(block_count, block_size, pmm);
 	init_vmmngr();
-	printf("Hello world, from my kernal!\n");
-	printf("This is a digit: %d ,and onther one %d \n", 1234, -1234);
+	init_context();
+	
 
-	printf("%%		%%Wow look %% a string %% %s and then a char %c \n", "1234", '&');
+	terminalInit();
 
+	// init interrupts
 	kprint("Starting init idt....\n");
 
 	init_idt();
@@ -26,6 +29,7 @@ void main(multiboot_info_t * mbt, heap_t * bootstrap_heap, char * pmm, uint32_t 
 
 	kprint("Done init idt\n");
 
+	// init real heap
 	extern uint32_t _kernel_end;
 	heap_t kernel_heap_def = {0};
 	kernel_heap_def.start_node = NULL;
@@ -36,85 +40,35 @@ void main(multiboot_info_t * mbt, heap_t * bootstrap_heap, char * pmm, uint32_t 
 	kernel_heap_def.is_kernel_only = true;
 	kernel_heap_def.is_heap_static = false;
 
-	heap_t * kernel_heap = self_map_heap(kernel_heap_def);
+	heap_t *kernel_heap = self_map_heap(kernel_heap_def);
+	set_current_heap(kernel_heap);
 
-	char* new_pmm = malloc(block_count / 8, kernel_heap);
+	// change physical memory map to a new one
+	char *new_pmm = malloc(block_count / 8);
 	new_pmm = memcpy(new_pmm, pmm, block_count / 8);
 
 	pmmngr_init(block_count, block_size, new_pmm);
 
-	terminalInit();
-	print_heap(kernel_heap);
+	test_heap();
+
+	uint32_t context_test = 0;
+
+
+	address_space_t current_address_space 	= get_current_address_space();
 	
+	address_space_t *new_address_space 		= create_new_address_space();
 
+	printf("context_test physical address = 0x%x , and value is = %d \n",get_physaddr(&context_test) , context_test);
 
-	void * ptr1 = malloc(1, kernel_heap);
-	void * ptr2 = malloc(1, kernel_heap);
-	void * ptr3 = malloc(1, kernel_heap);
-	void * ptr4 = malloc(1, kernel_heap);
+	set_current_address_space(*new_address_space);
 
-	terminalInit();
-	print_heap(kernel_heap);
-	
+	context_test = 123;
 
-	free(ptr1, kernel_heap);
-	free(ptr2, kernel_heap);
-	free(ptr4, kernel_heap);
-	free(ptr3, kernel_heap);
+	printf("context_test physical address = 0x%x , and value is = %d \n",get_physaddr(&context_test) , context_test);
 
-	terminalInit();
-	print_heap(kernel_heap);
+	set_current_address_space(current_address_space);
 
-	void * ptr5 = malloc(4, kernel_heap);
-
-	terminalInit();
-	print_heap(kernel_heap);
-
-	void * ptr6 = malloc(PAGE_SIZE * 3, kernel_heap);
-
-	terminalInit();
-	print_heap(kernel_heap);
-
-	void * ptr7 = aligned_malloc(8, 8, kernel_heap);
-
-	terminalInit();
-	print_heap(kernel_heap);
-	
-
-	void * ptr8 = aligned_malloc(8, 0x1000, kernel_heap);
-
-	terminalInit();
-	print_heap(kernel_heap);
-
-	free(ptr5, kernel_heap);
-	free(ptr6, kernel_heap);
-	free(ptr7, kernel_heap);
-	free(ptr8, kernel_heap);
-
-	terminalInit();
-	print_heap(kernel_heap);
-
-	void * ptr9 = malloc(1, kernel_heap);
-
-	terminalInit();
-	print_heap(kernel_heap);
-
-	
-
-
-	void *block = pmmngr_alloc_block();
-	void *virt_addr = (void *)0x4000000;
-
-	vmmngr_alloc_page(virt_addr, block, PRESENT_PAGE | READ_WRITE_PAGE);
-
-	((char *)virt_addr)[0] = 'x';
-
-	vmmngr_free_page(virt_addr);
-	pmmngr_free_block(block);
-
-	// int zero = 0/0;
-
-	// __asm__("int $0x20");
+	printf("context_test physical address = 0x%x , and value is = %d \n",get_physaddr(&context_test) , context_test);
 
 	kprint("halt...\n");
 	for (;;)
@@ -122,4 +76,60 @@ void main(multiboot_info_t * mbt, heap_t * bootstrap_heap, char * pmm, uint32_t 
 		// int x = 1;
 		__asm__("hlt");
 	}
+}
+
+
+void test_heap()
+{
+	terminalInit();
+	print_heap(get_current_heap());
+
+	void *ptr1 = malloc(1);
+	void *ptr2 = malloc(1);
+	void *ptr3 = malloc(1);
+	void *ptr4 = malloc(1);
+
+	terminalInit();
+	print_heap(get_current_heap());
+
+	free(ptr1);
+	free(ptr2);
+	free(ptr4);
+	free(ptr3);
+
+	terminalInit();
+	print_heap(get_current_heap());
+
+	void *ptr5 = malloc(4);
+
+	terminalInit();
+	print_heap(get_current_heap());
+
+	void *ptr6 = malloc(PAGE_SIZE * 3);
+
+	terminalInit();
+	print_heap(get_current_heap());
+
+	void *ptr7 = aligned_malloc(8, 8);
+
+	terminalInit();
+	print_heap(get_current_heap());
+
+	void *ptr8 = aligned_malloc(8, 0x1000);
+
+	terminalInit();
+	print_heap(get_current_heap());
+
+	free(ptr5);
+	free(ptr6);
+	free(ptr7);
+	free(ptr8);
+
+	terminalInit();
+	print_heap(get_current_heap());
+
+	void *ptr9 = malloc(1);
+
+	terminalInit();
+	print_heap(get_current_heap());
 }

@@ -29,13 +29,12 @@ _bootstrap_start:
     pushl %ebx
 
     call init_bit_map
-
+    
     movl %cr0, %ecx
-	orl $0x80010000, %ecx
-	movl %ecx, %cr0
+    orl $0x80010000, %ecx
+    movl %ecx, %cr0
 
     
-
     leal _higher_half , %eax
     jmp *%eax
 .end:

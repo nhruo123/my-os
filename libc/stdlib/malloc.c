@@ -6,6 +6,15 @@
 #include <mmnger/mmnger_virtual.h>
 #include "linked_list.h"
 
+heap_t * current_heap = NULL;
+
+void set_current_heap(heap_t * heap) {
+    current_heap = heap;
+}
+heap_t * get_current_heap() {
+    return current_heap;
+}
+
 static void combine_nodes(list_node_t *first, list_node_t *second, heap_t *heap)
 {
     if (first > second)
@@ -72,14 +81,14 @@ heap_t *self_map_heap(heap_t heap)
         add_page_to_heap(&heap);
     }
     heap.start_node = add_free_region(NULL, heap.start_address, heap.end_address - heap.start_address - sizeof(list_node_t) - sizeof(node_footer_t));
-    void *new_heap_location = malloc(sizeof(heap_t), &heap);
+    void *new_heap_location = malloc_h(sizeof(heap_t), &heap);
 
     memcpy(new_heap_location, &heap, sizeof(heap_t));
 
     return (heap_t *)new_heap_location;
 }
 
-void *aligned_malloc(size_t size, size_t alignment, heap_t *heap)
+void *aligned_malloc_h(size_t size, size_t alignment, heap_t *heap)
 {
     if (alignment % 4 != 0)
     {
@@ -98,7 +107,7 @@ void *aligned_malloc(size_t size, size_t alignment, heap_t *heap)
         if (!heap->is_heap_static && heap->max_end_address > heap->end_address)
         {
             add_page_to_heap(heap);
-            return aligned_malloc(size, alignment, heap);
+            return aligned_malloc_h(size, alignment, heap);
         }
         return NULL;
     }
@@ -140,12 +149,12 @@ void *aligned_malloc(size_t size, size_t alignment, heap_t *heap)
     return (void *)free_node + sizeof(list_node_t);
 }
 
-void *malloc(size_t size, heap_t *heap)
+void *malloc_h(size_t size, heap_t *heap)
 {
-    aligned_malloc(size, 4, heap);
+    aligned_malloc_h(size, 4, heap);
 }
 
-void free(void *ptr, heap_t *heap)
+void free_h(void *ptr, heap_t *heap)
 {
 
     list_node_t *free_node = (list_node_t *)(ptr - sizeof(list_node_t));
@@ -155,6 +164,21 @@ void free(void *ptr, heap_t *heap)
     // try to combine next adjacent block
     try_combine_adjacent_nodes(heap, heap->start_node);
 }
+
+void* malloc (size_t size) {
+    return malloc_h(size, get_current_heap());
+}
+
+void *aligned_malloc(size_t size, size_t alignment) {
+    return aligned_malloc_h(size, alignment, get_current_heap());
+}
+
+void free (void* ptr) {
+    free_h(ptr, get_current_heap());
+}
+
+
+
 
 void print_heap(heap_t *heap)
 {

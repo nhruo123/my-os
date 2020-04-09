@@ -103,11 +103,11 @@ void __attribute__((section(".bootstrap"))) init_bit_map(multiboot_info_t *mbt, 
     // TODO: this block_count is supose to be the max memmory adress represented in blocks of 4k but its not the right calc
     block_count = ((1024 * 1024 + (mbt->mem_upper)) * 1024) / block_size;
 
-    // allocate space for pmm with malloc from the real adress of the function before mapping
-    multiboot_info_t *new_mbt = ((multiboot_info_t * (*)(size_t, heap_t *))((void *)malloc - (void *)&VIRT_BASE))(sizeof(multiboot_info_t), self_mapped_heap);
+    // allocate space for pmm with malloc_h from the real adress of the function before mapping
+    multiboot_info_t *new_mbt = ((multiboot_info_t * (*)(size_t, heap_t *))((void *)malloc_h - (void *)&VIRT_BASE))(sizeof(multiboot_info_t), self_mapped_heap);
 
-    // allocate space for pmm with malloc from the real adress of the function before mapping
-    uint8_t *pmm = ((uint8_t * (*)(size_t, heap_t *))((void *)malloc - (void *)&VIRT_BASE))(block_count / 8, self_mapped_heap);
+    // allocate space for pmm with malloc_h from the real adress of the function before mapping
+    pmm = ((uint8_t * (*)(size_t, heap_t *))((void *)malloc_h - (void *)&VIRT_BASE))(block_count / 8, self_mapped_heap);
 
     // memcopy mbt to new mbt
     for (size_t i = 0; i < sizeof(multiboot_info_t); i++)
@@ -146,10 +146,22 @@ void __attribute__((section(".bootstrap"))) init_bit_map(multiboot_info_t *mbt, 
 
     mmap_set(0);
 
+    for (size_t i = 0; i < 4096; i++)
+    {
+        mmap_set(i);
+    }
+    
+
     uint32_t address_mask = ~0xfff;
     uint32_t page_flags = 0x3;
 
     uint32_t *pd = (uint32_t *)bootstrap_alloc_first();
+
+    // memset to pd to all bytes 0
+    for (uint32_t i = 0; i < 4096; i++)
+    {
+        pd[i] = 0;
+    }
 
     pd[1023] = ((uint32_t)pd & address_mask) | page_flags; //self map
 
