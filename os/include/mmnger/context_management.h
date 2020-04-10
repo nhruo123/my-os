@@ -28,6 +28,7 @@ typedef struct address_space_s {
 #define LOOP_BACK_TABLE     1023  
 #define RESERVED_TEMP_TABLE 1022
 #define STACK_TABLE         1021
+#define SCREEN_TABLE        1020
 
 // STACK PAGE POTENTIAL ADDRESS SPACE IS    0XFF7FF000 => 0x‭FF400‬000
 

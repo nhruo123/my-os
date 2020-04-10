@@ -42,9 +42,11 @@ void init_context()
     {
         if (!(current_page_dir[page_table_index].flags & PRESENT_PAGE))
         {
-            vmmngr_alloc_page_table(page_table_index, KERNEL_FLAGS);
+            bool is_alloc_good = vmmngr_alloc_page_table(page_table_index, KERNEL_FLAGS);
+            
 
             memset(get_page_address_from_indexes(LOOP_BACK_TABLE, page_table_index), 0, PAGE_SIZE);
+
         }
     }
 
@@ -54,7 +56,7 @@ void init_context()
          page_index <= get_page_table_index(STACK_TOP);
          page_index++)
     {
-        stack_page_table[page_index].physical_address = (uint32_t)pmmngr_alloc_block() >> 12;
+        stack_page_table[page_index].physical_address = (uint32_t)pmmngr_alloc_page() >> 12;
         stack_page_table[page_index].flags = KERNEL_FLAGS;
     }
 
@@ -101,7 +103,7 @@ page_dir_entry_t clone_page_table(size_t page_table_index)
 
     page_dir_entry_t dir_entry_to_copy = current_page_dir[page_table_index];
     page_dir_entry_t new_page_dir_entry = {0};
-    new_page_dir_entry.physical_address = (uint32_t)pmmngr_alloc_block() >> 12;
+    new_page_dir_entry.physical_address = (uint32_t)pmmngr_alloc_page() >> 12;
     new_page_dir_entry.flags = dir_entry_to_copy.flags;
 
     current_page_dir[RESERVED_TEMP_TABLE] = new_page_dir_entry;
@@ -116,7 +118,7 @@ page_dir_entry_t clone_page_table(size_t page_table_index)
         if (page_table_to_copy[page_index].flags & PRESENT_PAGE)
         {
             new_page_table[page_index].flags = page_table_to_copy[page_index].flags;
-            new_page_table[page_index].physical_address = (uint32_t)pmmngr_alloc_block() >> 12;
+            new_page_table[page_index].physical_address = (uint32_t)pmmngr_alloc_page() >> 12;
             flushTLB();
 
             void *current_page_address = get_page_address_from_indexes(page_table_index, page_index);
@@ -138,7 +140,7 @@ address_space_t *create_new_address_space()
 
     address_space_t *new_page_dir_entry = malloc(sizeof(address_space_t));
 
-    new_page_dir_entry->physical_address = (uint32_t)pmmngr_alloc_block();
+    new_page_dir_entry->physical_address = (uint32_t)pmmngr_alloc_page();
 
     current_page_dir[RESERVED_TEMP_TABLE].physical_address = new_page_dir_entry->physical_address >> 12;
     current_page_dir[RESERVED_TEMP_TABLE].flags = KERNEL_FLAGS;
@@ -160,9 +162,9 @@ address_space_t *create_new_address_space()
     new_page_dir[LOOP_BACK_TABLE].physical_address = new_page_dir_entry->physical_address >> 12;
     new_page_dir[LOOP_BACK_TABLE].flags = KERNEL_FLAGS;
 
-    // TODO REMOVE THIS AND MANGAGE VGA
-    size_t vga_index = get_page_directory_index(0xB8000);
-    new_page_dir[vga_index] = current_page_dir[vga_index];
+    // // TODO REMOVE THIS AND MANGAGE VGA
+    // size_t vga_index = get_page_directory_index(0xB8000);
+    // new_page_dir[vga_index] = current_page_dir[vga_index];
 
     // clone stack page table
     new_page_dir[STACK_TABLE] = clone_page_table(STACK_TABLE);

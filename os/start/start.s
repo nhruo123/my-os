@@ -15,7 +15,7 @@
 	.skip 20
 	.long 1 # mode_type
 	.long 80 # width
-	.long 25 # height
+	.long 50 # height
 	.long 0 # depth
 
 .section .data

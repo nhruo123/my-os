@@ -37,7 +37,7 @@ void init_vmmngr();
 void * get_physaddr(void * virtualaddr);
 bool vmmngr_test_is_page_mapped (void* virtualaddr);
 
-void vmmngr_alloc_page_table(uint32_t page_table_index, uint16_t flags);
+bool vmmngr_alloc_page_table(uint32_t page_table_index, uint16_t flags);
 void vmmngr_alloc_page (void* virtualaddr, void* physaddr, uint16_t flags);
 void vmmngr_alloc_page_and_phys (void* virtualaddr, uint16_t flags);
 

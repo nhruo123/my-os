@@ -14,6 +14,7 @@ static bool is_region_good_for_alloc(list_node_t *node, size_t size, size_t alig
         return false;
     }
 
+
     size_t front_leftover = node->size - offset - size;
 
     if (front_leftover > 0 && front_leftover < (sizeof(list_node_t) + sizeof(node_footer_t)))
@@ -33,50 +34,59 @@ static bool is_region_good_for_alloc(list_node_t *node, size_t size, size_t alig
 
 // TODO change to ofir's formula
 // (allign - 1)-(x-1)%allign
-uint32_t find_alligned_node_offset(list_node_t *node, size_t alignment) {
-    uint32_t usable_mem = ((uint32_t)node + sizeof(list_node_t));
+uint32_t find_alligned_node_offset(list_node_t *node, size_t alignment)
+{
+    uint32_t user_mem = ((uint32_t)node + sizeof(list_node_t));
 
     uint32_t aligned_mem;
-    if ((usable_mem % alignment) == 0)
+    if ((user_mem % alignment) == 0)
     {
-        aligned_mem = usable_mem;
+        aligned_mem = user_mem;
     }
     else
     {
-        aligned_mem = usable_mem + (alignment - (usable_mem % alignment));
+        aligned_mem = user_mem + (alignment - (user_mem % alignment));
     }
 
-    uint32_t offset = aligned_mem - usable_mem;
+    uint32_t offset = aligned_mem - user_mem;
+
+    while(offset < (sizeof(list_node_t) + sizeof(node_footer_t))) {
+        offset += alignment;
+    }
 
     return offset;
 }
 
-list_node_t * find_region(list_node_t ** out_head_pointer, size_t size, size_t alignment) {
-    list_node_t ** next_pointer_of_prev = out_head_pointer;
-    list_node_t * current = *next_pointer_of_prev;
-    list_node_t * next = current->next;
+list_node_t *find_region(list_node_t **out_head_pointer, size_t size, size_t alignment)
+{
+    list_node_t **next_pointer_of_prev = out_head_pointer;
+    list_node_t *current = *next_pointer_of_prev;
+    list_node_t *next = current->next;
 
-        while(current != NULL) {
-        if(is_region_good_for_alloc(current, size , alignment)) {
+    while (current != NULL)
+    {
+        if (is_region_good_for_alloc(current, size, alignment))
+        {
             *next_pointer_of_prev = next; // skip current
             current->next = NULL;
             return current;
         }
-        
+
         next_pointer_of_prev = &(current->next);
         current = current->next;
-        if( next != NULL) {
+        if (next != NULL)
+        {
             next = next->next;
         }
-        
     }
 
     return NULL;
 }
 
-list_node_t * add_free_region(list_node_t * previous_head, uint32_t address, size_t size) {
-    list_node_t * new_head = (void *)address;
-    node_footer_t * new_footer = (void *)address + size + sizeof(list_node_t);
+list_node_t *add_free_region(list_node_t *previous_head, uint32_t address, size_t size)
+{
+    list_node_t *new_head = (void *)address;
+    node_footer_t *new_footer = (void *)address + size + sizeof(list_node_t);
 
     new_footer->node = new_head;
 
@@ -87,15 +97,18 @@ list_node_t * add_free_region(list_node_t * previous_head, uint32_t address, siz
     return new_head;
 }
 
-list_node_t * skip_node(list_node_t * head_node, list_node_t * node_to_skip) {
-    list_node_t * current = head_node;
-    list_node_t * next = current->next;
+list_node_t *skip_node(list_node_t *head_node, list_node_t *node_to_skip)
+{
+    list_node_t *current = head_node;
+    list_node_t *next = current->next;
 
-    if(head_node == node_to_skip) {
+    if (head_node == node_to_skip)
+    {
         return head_node->next;
     }
-    
-    while(next != node_to_skip) {
+
+    while (next != node_to_skip)
+    {
         current = current->next;
         next = current->next;
     }
@@ -105,13 +118,10 @@ list_node_t * skip_node(list_node_t * head_node, list_node_t * node_to_skip) {
     return head_node;
 }
 
-
-
-
 // list_node_t * get_head_to_space() {
 //     extern uint32_t heap_start;
 //     extern uint32_t heap_end;
-    
+
 //     if(! is_khead_init) {
 //         khead = NULL;
 //         khead = add_free_region(khead,(uint32_t)&heap_start, (uint32_t)&heap_end - (uint32_t)&heap_start);

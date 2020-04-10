@@ -3,18 +3,19 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <multiboot.h>
 
-#define OUT_OF_MEMORY 0;
+#define OUT_OF_MEMORY NULL
 
-void pmmngr_init (size_t block_count, size_t block_size, char * bitmap_adress);
+void pmmngr_init(multiboot_info_t *mbt);
 
-void* pmmngr_alloc_blocks(size_t blocks);
+void* pmmngr_alloc_pages(size_t blocks);
 
-void* pmmngr_alloc_block();
+void* pmmngr_alloc_pages();
 
-void pmmngr_free_blocks (void* addr, size_t blocks);
+void pmmngr_free_pages (void* addr, size_t blocks);
 
-void pmmngr_free_block (void* addr);
+void pmmngr_free_page (void* addr);
 
 
 #endif

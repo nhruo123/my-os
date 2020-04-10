@@ -4,7 +4,7 @@
 .global bootstrap_heap_start
 .global bootstrap_heap_end
 bootstrap_heap_start:
-.skip 65536 # 64 KiB
+.skip 180600 # 150 KiB
 bootstrap_heap_end:
 
 .align 16

@@ -9,7 +9,7 @@
 
 void flushTLB()
 {
-    asm("movl	%cr3,%eax; movl	%eax,%cr3");
+    asm volatile("movl	%cr3,%eax; movl	%eax,%cr3");
 }
 
 size_t get_page_directory_index(void *virtualaddr)
@@ -98,19 +98,27 @@ void vmmngr_alloc_page(void *virtualaddr, void *physaddr, uint16_t flags)
     flushTLB();
 }
 
-void vmmngr_alloc_page_table(uint32_t page_table_index, uint16_t flags)
-{
-    uint32_t free_block = (uint32_t)pmmngr_alloc_block();
-
-    current_page_dir[page_table_index].flags = (flags & 0XFFF);
-    current_page_dir[page_table_index].physical_address = free_block >> 12;
+bool vmmngr_alloc_page_table(uint32_t page_table_index, uint16_t flags)
+{   
+    uint32_t free_address = (uint32_t)pmmngr_alloc_page();
+    if(free_address == NULL) {
+        return false;
+    }
+    current_page_dir[page_table_index].flags = flags;
+    current_page_dir[page_table_index].physical_address =  free_address >> 12;
 
     flushTLB();
+
+    return true;
 }
 
 void vmmngr_alloc_page_and_phys(void *virtualaddr, uint16_t flags)
 {
-    void *free_block = pmmngr_alloc_block();
+    void *free_block = pmmngr_alloc_page();
+    if(free_block == OUT_OF_MEMORY) {
+        // FKING PANIC
+        abort();
+    }
     vmmngr_alloc_page(virtualaddr, free_block, flags);
 }
 
@@ -132,6 +140,6 @@ void vmmngr_free_page(void *virtualaddr)
 
 void vmmngr_free_page_and_phys(void *virtualaddr)
 {
-    pmmngr_free_block(get_physaddr(virtualaddr));
+    pmmngr_free_page(get_physaddr(virtualaddr));
     vmmngr_free_page(virtualaddr);
 }

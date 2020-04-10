@@ -7,18 +7,27 @@
 #include <interrupts/interrupts.h>
 #include <interrupts/isr.h>
 
+#include <multiboot.h>
+#include <screen/screen.h>
+
 #include "../keyboard/keyboard.h"
-#include "../multiboot.h"
 
 void main(multiboot_info_t *mbt, heap_t *bootstrap_heap, char *pmm, uint32_t block_count, uint32_t block_size)
 {
-	// init base memmory mangemnt
-	pmmngr_init(block_count, block_size, pmm);
-	init_vmmngr();
-	init_context();
-	
+	set_current_heap(bootstrap_heap);
+	clear_screen();
+	printf("block_count = %d \n", block_count);
+	printf("block_size = %d \n", block_size);
 
-	terminalInit();
+	// init base memmory mangemnt
+	pmmngr_init(mbt);
+	init_vmmngr();
+	
+	init_context();
+
+	init_screen(mbt);
+
+	clear_screen();
 
 	// init interrupts
 	kprint("Starting init idt....\n");
@@ -43,32 +52,25 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap, char *pmm, uint32_t blo
 	heap_t *kernel_heap = self_map_heap(kernel_heap_def);
 	set_current_heap(kernel_heap);
 
-	// change physical memory map to a new one
-	char *new_pmm = malloc(block_count / 8);
-	new_pmm = memcpy(new_pmm, pmm, block_count / 8);
-
-	pmmngr_init(block_count, block_size, new_pmm);
-
 	test_heap();
 
 	uint32_t context_test = 0;
 
+	address_space_t current_address_space = get_current_address_space();
 
-	address_space_t current_address_space 	= get_current_address_space();
-	
-	address_space_t *new_address_space 		= create_new_address_space();
+	address_space_t *new_address_space = create_new_address_space();
 
-	printf("context_test physical address = 0x%x , and value is = %d \n",get_physaddr(&context_test) , context_test);
+	printf("context_test physical address = 0x%x , and value is = %d \n", get_physaddr(&context_test), context_test);
 
 	set_current_address_space(*new_address_space);
 
 	context_test = 123;
 
-	printf("context_test physical address = 0x%x , and value is = %d \n",get_physaddr(&context_test) , context_test);
+	printf("context_test physical address = 0x%x , and value is = %d \n", get_physaddr(&context_test), context_test);
 
 	set_current_address_space(current_address_space);
 
-	printf("context_test physical address = 0x%x , and value is = %d \n",get_physaddr(&context_test) , context_test);
+	printf("context_test physical address = 0x%x , and value is = %d \n", get_physaddr(&context_test), context_test);
 
 	kprint("halt...\n");
 	for (;;)
@@ -78,10 +80,9 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap, char *pmm, uint32_t blo
 	}
 }
 
-
 void test_heap()
 {
-	terminalInit();
+	clear_screen();
 	print_heap(get_current_heap());
 
 	void *ptr1 = malloc(1);
@@ -89,7 +90,7 @@ void test_heap()
 	void *ptr3 = malloc(1);
 	void *ptr4 = malloc(1);
 
-	terminalInit();
+	clear_screen();
 	print_heap(get_current_heap());
 
 	free(ptr1);
@@ -97,27 +98,27 @@ void test_heap()
 	free(ptr4);
 	free(ptr3);
 
-	terminalInit();
+	clear_screen();
 	print_heap(get_current_heap());
 
 	void *ptr5 = malloc(4);
 
-	terminalInit();
+	clear_screen();
 	print_heap(get_current_heap());
 
 	void *ptr6 = malloc(PAGE_SIZE * 3);
 
-	terminalInit();
+	clear_screen();
 	print_heap(get_current_heap());
 
 	void *ptr7 = aligned_malloc(8, 8);
 
-	terminalInit();
+	clear_screen();
 	print_heap(get_current_heap());
 
 	void *ptr8 = aligned_malloc(8, 0x1000);
 
-	terminalInit();
+	clear_screen();
 	print_heap(get_current_heap());
 
 	free(ptr5);
@@ -125,11 +126,11 @@ void test_heap()
 	free(ptr7);
 	free(ptr8);
 
-	terminalInit();
+	clear_screen();
 	print_heap(get_current_heap());
 
 	void *ptr9 = malloc(1);
 
-	terminalInit();
+	clear_screen();
 	print_heap(get_current_heap());
 }
