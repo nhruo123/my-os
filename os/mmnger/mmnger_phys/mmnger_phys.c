@@ -89,6 +89,15 @@ static uint32_t mmap_get_first_free_page()
 	mmap_get_first_free_pages_bit(1);
 }
 
+void pmmngr_change_heap()
+{
+	void *new_physical_memory_map = malloc(_mmngr_page_count);
+
+	new_physical_memory_map = memcpy(new_physical_memory_map, physical_memory_map, _mmngr_page_count);
+
+	physical_memory_map = new_physical_memory_map;
+}
+
 void pmmngr_init(multiboot_info_t *mbt)
 {
 
@@ -109,7 +118,8 @@ void pmmngr_init(multiboot_info_t *mbt)
 	printf("last_phyiscal_adress = 0x%x \n", last_phyiscal_adress);
 	size_t last_page_bit = mmap_adress_to_bit(last_phyiscal_adress);
 	size_t last_page_byte = last_page_bit / 8;
-	if(last_page_bit % 8 != 0) {
+	if (last_page_bit % 8 != 0)
+	{
 		last_page_byte++;
 	}
 
@@ -117,14 +127,15 @@ void pmmngr_init(multiboot_info_t *mbt)
 	physical_memory_map = (char *)malloc(last_page_byte);
 	printf("physical_memory_map = 0x%x \n", physical_memory_map);
 
-	if(physical_memory_map == NULL) {
+	if (physical_memory_map == NULL)
+	{
 		printf("cant find memory for physical_memory_map!!! \n");
 		abort();
 	}
-	
+
 	_mmngr_memory_size = last_page_byte * PAGE_SIZE;
 	_mmngr_page_count = last_page_byte;
-	
+
 	memset(physical_memory_map, 0xff, last_page_byte);
 
 	entry = mbt->mmap_addr;

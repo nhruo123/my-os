@@ -9,6 +9,8 @@
 
 void pmmngr_init(multiboot_info_t *mbt);
 
+void pmmngr_change_heap();
+
 void* pmmngr_alloc_pages(size_t blocks);
 
 void* pmmngr_alloc_pages();

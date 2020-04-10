@@ -51,6 +51,7 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap, char *pmm, uint32_t blo
 
 	heap_t *kernel_heap = self_map_heap(kernel_heap_def);
 	set_current_heap(kernel_heap);
+	pmmngr_change_heap();
 
 	test_heap();
 
