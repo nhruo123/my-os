@@ -79,6 +79,7 @@ void __attribute__((section(".bootstrap"))) bootstrap_map_pages(
             {
                 pt =
                     ((uint32_t * (*)(size_t, size_t, heap_t *))((void *)aligned_malloc_h - (void *)&VIRT_BASE))(PAGE_SIZE, PAGE_SIZE, self_mapped_heap);
+                pt = ((void * (*)(void*, int, size_t *))((void *)memset - (void *)&VIRT_BASE))(pt, 0, PAGE_SIZE);
                 pd[page_dir_index] = (((uint32_t)pt) & address_mask) | page_flags;
             }
             else
@@ -132,6 +133,8 @@ void __attribute__((section(".bootstrap"))) init_bit_map(multiboot_info_t *mbt, 
 
     uint32_t *pd =
         ((uint32_t * (*)(size_t, size_t, heap_t *))((void *)aligned_malloc_h - (void *)&VIRT_BASE))(PAGE_SIZE, PAGE_SIZE, self_mapped_heap);
+
+    pd = ((void * (*)(void*, int, size_t *))((void *)memset - (void *)&VIRT_BASE))(pd, 0, PAGE_SIZE);
 
     pd[1023] = ((uint32_t)pd & address_mask) | page_flags; //self map
 

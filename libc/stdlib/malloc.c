@@ -188,7 +188,6 @@ void print_heap(heap_t *heap)
      (uint32_t)heap->max_end_address, (uint32_t)heap->is_kernel_only ,
      (uint32_t)heap->is_read_only , (uint32_t)heap->is_heap_static);
 
-    printf("\n");
     size_t index = 0;
     list_node_t * node = heap->start_node;
     
@@ -203,10 +202,8 @@ void print_heap(heap_t *heap)
 
         printf("node(%d) = 0x%x{ size: %d , is_free: %d , next: 0x%x  } \n", 
         index, (uint32_t)node, node->size, (uint32_t)node->is_free, (uint32_t)node->next);
-        printf("\n");
 
         printf("footer(%d) = 0x%x{ node: 0x%x  } \n", index, (uint32_t)footer, footer->node);
-        printf("\n");
 
         node = node->next;
         index++;
