@@ -14,7 +14,6 @@ static bool is_region_good_for_alloc(list_node_t *node, size_t size, size_t alig
         return false;
     }
 
-
     size_t front_leftover = node->size - offset - size;
 
     if (front_leftover > 0 && front_leftover < (sizeof(list_node_t) + sizeof(node_footer_t)))
@@ -50,7 +49,8 @@ uint32_t find_alligned_node_offset(list_node_t *node, size_t alignment)
 
     uint32_t offset = aligned_mem - user_mem;
 
-    while(offset < (sizeof(list_node_t) + sizeof(node_footer_t))) {
+    while ((offset != 0) && (offset < (sizeof(list_node_t) + sizeof(node_footer_t))))
+    {
         offset += alignment;
     }
 
