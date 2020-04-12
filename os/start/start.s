@@ -41,7 +41,6 @@ gdt:
  .byte 0 
 .gdt_end:
 
-
 gdt_desc:
  .word .gdt_end - gdt - 1
  .long gdt
@@ -56,17 +55,17 @@ _higher_half:
 	# subl $20, %esp # we pass 5 parameters into the main function so we do (5 * 4)
 
 
-	lgdt gdt_desc
+	# lgdt gdt_desc
 	
-	ljmp $0x08, $._flush_cs
+	# ljmp $0x08, $._flush_cs
 	
-    ._flush_cs:
-    movw $0x10 , %cx
-	movw %cx , %ds
-	movw %cx , %ss
-	movw %cx , %es
-	movw %cx , %gs
-	movw %cx , %fs
+    # ._flush_cs:
+    # movw $0x10 , %cx
+	# movw %cx , %ds
+	# movw %cx , %ss
+	# movw %cx , %es
+	# movw %cx , %gs
+	# movw %cx , %fs
 
 
     call main

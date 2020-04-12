@@ -14,6 +14,7 @@
 
 void main(multiboot_info_t *mbt, heap_t *bootstrap_heap, char *pmm, uint32_t block_count, uint32_t block_size)
 {
+	init_gdt();
 	set_current_heap(bootstrap_heap);
 	clear_screen();
 	printf("block_count = %d \n", block_count);
