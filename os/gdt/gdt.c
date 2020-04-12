@@ -13,8 +13,8 @@ void init_gdt()
     gdt_ptr.base = (uint32_t)gdt_entries;
 
     gdt_set_entry(0, 0, 0, 0, 0); // NULL 
-    gdt_set_entry(1, 0, 0xFFFFFFFF, 0x9A, 0xC0); // KERNEL CODE
-    gdt_set_entry(2, 0, 0xFFFFFFFF, 0x92, 0xC0); // KERNEL DATA
+    gdt_set_entry(1, 0, 0xFFFFFFFF, 0x9A, 0xC); // KERNEL CODE
+    gdt_set_entry(2, 0, 0xFFFFFFFF, 0x92, 0xC); // KERNEL DATA
 
     flush_gdt(&gdt_ptr);
 }
@@ -27,9 +27,9 @@ static void gdt_set_entry(uint32_t index, uint32_t base, uint32_t limit, uint8_t
 
     gdt_entries[index].limit_low = (limit & 0xFFFF);
 
-    gdt_entries[index].flags = (limit >> 16) & 0x0F;
+    gdt_entries[index].limit_high = (limit >> 16) & 0x0F;
 
-    gdt_entries[index].flags |= flags & 0xF0;
+    gdt_entries[index].flags = flags & 0xF;
 
     gdt_entries[index].access_bytes = access_byte;
 }

@@ -18,56 +18,11 @@
 	.long 50 # height
 	.long 0 # depth
 
-.section .data
-gdt:
-
- .gdt_null:
- .quad 0
-
- .gdt_code:
- .word 0xFFFF # limit
- .word 0x0 # base
- .byte 0 # base
- .byte 0b10011010
- .byte 0b11001111
- .byte 0
-
- .gdt_data:
- .word 0xFFFF
- .word 0x0
- .byte 0
- .byte 0b10010010
- .byte 0b11001111
- .byte 0 
-.gdt_end:
-
-gdt_desc:
- .word .gdt_end - gdt - 1
- .long gdt
-
 
 .section .text
 .global _higher_half
 .type _higher_half, @function
 _higher_half:
-
-	# movl $stack_top , %esp
-	# subl $20, %esp # we pass 5 parameters into the main function so we do (5 * 4)
-
-
-	# lgdt gdt_desc
-	
-	# ljmp $0x08, $._flush_cs
-	
-    # ._flush_cs:
-    # movw $0x10 , %cx
-	# movw %cx , %ds
-	# movw %cx , %ss
-	# movw %cx , %es
-	# movw %cx , %gs
-	# movw %cx , %fs
-
-
     call main
 
 	cli

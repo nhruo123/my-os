@@ -17,7 +17,8 @@ struct gdt_entry_s {
     uint16_t base_low : 16; // first word end
     uint8_t  base_mid : 8;
     uint8_t  access_bytes : 8;
-    uint8_t  flags : 8;
+    uint8_t  limit_high : 4;
+    uint8_t  flags : 4;
     uint8_t  base_high : 8;
 } __attribute__((packed));
 
