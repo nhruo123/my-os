@@ -24,9 +24,6 @@ _bootstrap_start:
     movl $bootstrap_stack_top , %esp # set up stack 
     pushl %ebx
     pushl %ebx
-    pushl %ebx
-    pushl %ebx
-    pushl %ebx
 
     call init_bit_map
     

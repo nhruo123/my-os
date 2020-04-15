@@ -134,15 +134,15 @@ page_dir_entry_t clone_page_table(size_t page_table_index)
     return new_page_dir_entry;
 }
 
-address_space_t *create_new_address_space()
+address_space_t create_new_address_space()
 {
     page_dir_entry_t old_reserved_temp_table = current_page_dir[RESERVED_TEMP_TABLE];
 
-    address_space_t *new_page_dir_entry = malloc(sizeof(address_space_t));
+    address_space_t new_page_dir_entry;
 
-    new_page_dir_entry->physical_address = (uint32_t)pmmngr_alloc_page();
+    new_page_dir_entry.physical_address = (uint32_t)pmmngr_alloc_page();
 
-    current_page_dir[RESERVED_TEMP_TABLE].physical_address = new_page_dir_entry->physical_address >> 12;
+    current_page_dir[RESERVED_TEMP_TABLE].physical_address = new_page_dir_entry.physical_address >> 12;
     current_page_dir[RESERVED_TEMP_TABLE].flags = KERNEL_FLAGS;
     flushTLB();
 
@@ -159,7 +159,7 @@ address_space_t *create_new_address_space()
     }
 
     // change loop back map for new page dir
-    new_page_dir[LOOP_BACK_TABLE].physical_address = new_page_dir_entry->physical_address >> 12;
+    new_page_dir[LOOP_BACK_TABLE].physical_address = new_page_dir_entry.physical_address >> 12;
     new_page_dir[LOOP_BACK_TABLE].flags = KERNEL_FLAGS;
 
     // // TODO REMOVE THIS AND MANGAGE VGA
@@ -173,4 +173,21 @@ address_space_t *create_new_address_space()
     flushTLB();
 
     return new_page_dir_entry;
+}
+
+
+page_dir_entry_t mount_page_dir_on_temp_dir(page_dir_entry_t dir_to_mount) {
+    page_dir_entry_t old_dir = current_page_dir[RESERVED_TEMP_TABLE];
+    current_page_dir[RESERVED_TEMP_TABLE] = dir_to_mount;
+    
+    flushTLB();
+    return old_dir;
+}
+
+page_dir_entry_t mount_address_space_on_temp_dir(address_space_t adress_space_to_mount) {
+    page_dir_entry_t dummy_dir_entry;
+    dummy_dir_entry.flags = KERNEL_FLAGS;
+    dummy_dir_entry.physical_address = adress_space_to_mount.physical_address >> 12;
+    
+    return mount_page_dir_on_temp_dir(dummy_dir_entry);
 }

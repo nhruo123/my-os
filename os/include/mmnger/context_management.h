@@ -54,7 +54,10 @@ void set_current_address_space(address_space_t new_address_space);
 void init_context();
 
 page_dir_entry_t clone_page_table(size_t page_table_index);
-address_space_t *create_new_address_space();
+address_space_t create_new_address_space();
+
+page_dir_entry_t mount_page_dir_on_temp_dir(page_dir_entry_t dir_to_mount);
+page_dir_entry_t mount_address_space_on_temp_dir(address_space_t adress_space_to_mount);
 
 
 

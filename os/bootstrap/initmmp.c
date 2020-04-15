@@ -93,7 +93,7 @@ void __attribute__((section(".bootstrap"))) bootstrap_map_pages(
     }
 }
 
-void __attribute__((section(".bootstrap"))) init_bit_map(multiboot_info_t *mbt, heap_t *bootstrap_heap_out, char *pmm_out, int block_count_out, int block_size_out)
+void __attribute__((section(".bootstrap"))) init_bit_map(multiboot_info_t *mbt, heap_t *bootstrap_heap_out)
 {
     heap_t static_heap = {0};
     static_heap.is_kernel_only = true;
@@ -150,7 +150,4 @@ void __attribute__((section(".bootstrap"))) init_bit_map(multiboot_info_t *mbt, 
 
     mbt = new_mbt;
     bootstrap_heap_out = self_mapped_heap;
-    pmm_out = pmm;
-    block_count_out = block_count;
-    block_size_out = block_size;
 }

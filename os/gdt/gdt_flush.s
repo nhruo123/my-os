@@ -16,3 +16,13 @@ flush_gdt:
 	movw %cx , %es
 	movw %cx , %gs
     ret
+
+
+.section .text
+.global flush_tss
+.type flush_tss, @function
+flush_tss:
+	movl 4(%esp), %eax
+
+	ltr %ax
+ret

@@ -6,19 +6,19 @@
 #include <mmnger/context_management.h>
 #include <interrupts/interrupts.h>
 #include <interrupts/isr.h>
+#include <multitasking/task.h>
 
 #include <multiboot.h>
 #include <screen/screen.h>
 
 #include "../keyboard/keyboard.h"
+#include "./kernel.h"
 
-void main(multiboot_info_t *mbt, heap_t *bootstrap_heap, char *pmm, uint32_t block_count, uint32_t block_size)
+void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 {
 	init_gdt();
 	set_current_heap(bootstrap_heap);
 	clear_screen();
-	printf("block_count = %d \n", block_count);
-	printf("block_size = %d \n", block_size);
 
 	// init base memmory mangemnt
 	pmmngr_init(mbt);
@@ -52,27 +52,17 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap, char *pmm, uint32_t blo
 
 	heap_t *kernel_heap = self_map_heap(kernel_heap_def);
 	set_current_heap(kernel_heap);
+	
 	pmmngr_change_heap();
+
+	init_tasking();
 
 	test_heap();
 
-	uint32_t context_test = 0;
+	task_t *new_task = create_task(test_task_switch);
+	new_task->next_task = current_active_task;
 
-	address_space_t current_address_space = get_current_address_space();
-
-	address_space_t *new_address_space = create_new_address_space();
-
-	printf("context_test physical address = 0x%x , and value is = %d \n", get_physaddr(&context_test), context_test);
-
-	set_current_address_space(*new_address_space);
-
-	context_test = 123;
-
-	printf("context_test physical address = 0x%x , and value is = %d \n", get_physaddr(&context_test), context_test);
-
-	set_current_address_space(current_address_space);
-
-	printf("context_test physical address = 0x%x , and value is = %d \n", get_physaddr(&context_test), context_test);
+	switch_task(new_task);
 
 	kprint("halt...\n");
 	for (;;)
@@ -80,6 +70,11 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap, char *pmm, uint32_t blo
 		// int x = 1;
 		__asm__("hlt");
 	}
+}
+
+void test_task_switch() {
+	test_heap();
+	switch_task(current_active_task->next_task);
 }
 
 void test_heap()
