@@ -10,6 +10,7 @@
 
 #include <multiboot.h>
 #include <screen/screen.h>
+#include <interrupts/timer.h>
 
 #include "../keyboard/keyboard.h"
 #include "./kernel.h"
@@ -23,7 +24,7 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	// init base memmory mangemnt
 	pmmngr_init(mbt);
 	init_vmmngr();
-	
+
 	init_context();
 
 	init_screen(mbt);
@@ -34,6 +35,7 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	kprint("Starting init idt....\n");
 
 	init_idt();
+	init_timer();
 
 	register_interrupt_handler(33, &keyboard_call);
 
@@ -52,33 +54,28 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 
 	heap_t *kernel_heap = self_map_heap(kernel_heap_def);
 	set_current_heap(kernel_heap);
-	
+
 	pmmngr_change_heap();
 
 	init_tasking();
 
-	test_heap();
-
-	task_t *new_task = create_task(test_task_switch);
-	new_task->next_task = current_active_task;
-
-	switch_task(new_task);
+	task_t *new_task = create_task(test_heap);
 
 	kprint("halt...\n");
 	for (;;)
 	{
 		// int x = 1;
 		__asm__("hlt");
+		lock_scheduler();
+		schedule();
+		unlock_scheduler();
 	}
-}
-
-void test_task_switch() {
-	test_heap();
-	switch_task(current_active_task->next_task);
 }
 
 void test_heap()
 {
+	milli_sleep(10000);
+
 	clear_screen();
 	print_heap(get_current_heap());
 
