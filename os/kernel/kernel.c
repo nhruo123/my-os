@@ -62,19 +62,21 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	task_t *new_task = create_task(test_heap);
 
 	kprint("halt...\n");
-	for (;;)
-	{
-		// int x = 1;
-		__asm__("hlt");
-		lock_scheduler();
-		schedule();
-		unlock_scheduler();
-	}
+	// for (;;)
+	// {
+	// 	// int x = 1;
+	// 	__asm__("hlt");
+	// 	lock_scheduler();
+	// 	schedule();
+	// 	unlock_scheduler();
+	// }
+
+	exit_task_function();
 }
 
 void test_heap()
 {
-	milli_sleep(10000);
+	milli_sleep(5000);
 
 	clear_screen();
 	print_heap(get_current_heap());

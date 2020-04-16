@@ -33,7 +33,7 @@ extern task_t *sleeping_task_list;
 extern task_t *ready_to_run_list;
 extern task_t *last_task;
 
-static void exit_task_function();
+void exit_task_function();
 static void start_task_function();
 static void *push_to_other_stack(uint32_t value, void* stack_top);
 
