@@ -7,13 +7,14 @@
 #include <mmnger/context_management.h>
 #include <mmnger/mmnger_virtual.h>
 
-#define RUNNING         0
-#define READY_TO_RUN    1
-#define TERMINATED_TASK 2
-#define SLEEPING_TASK   3
+#define RUNNING             0
+#define READY_TO_RUN        1
+#define TERMINATED_TASK     2
+#define SLEEPING_TASK       3
+#define WAITING_FOR_LOCK    4
 
 #define TAKS_TIME_SLICE     50 // im millisecond
-#define ONLY_TASK_RUNNING  0
+#define ONLY_TASK_RUNNING   0
 
 
 typedef struct task_regs_s {
@@ -29,6 +30,12 @@ typedef struct task_s {
     uint32_t sleep_expiry;
 } task_t; // size is 12 + 4 + 4 + 4 == (24)
 
+typedef struct semaphore_s {
+    uint32_t max_count;
+    uint32_t current_count;
+    task_t *first_waiting_task;
+    task_t *last_waiting_task;
+} semaphore_t;
 
 extern uint32_t current_time_slice_remaining;
 
@@ -48,6 +55,13 @@ void unlock_scheduler();
 
 void lock_kernel_stuff();
 void unlock_kernel_stuff();
+
+semaphore_t *create_semaphore(uint32_t max_count);
+semaphore_t *create_mutex();
+void acquire_semaphore(semaphore_t * semaphore);
+void acquire_mutex(semaphore_t * semaphore);
+void release_semaphore(semaphore_t * semaphore);
+void release_mutex(semaphore_t * semaphore);
 
 
 void milli_sleep(uint32_t milliseconds);

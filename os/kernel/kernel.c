@@ -15,6 +15,7 @@
 #include "../keyboard/keyboard.h"
 #include "./kernel.h"
 
+
 void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 {
 	init_gdt();
@@ -56,20 +57,12 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	set_current_heap(kernel_heap);
 
 	pmmngr_change_heap();
-
+	init_heap_mutex();
 	init_tasking();
 
 	task_t *new_task = create_task(test_heap);
 
 	kprint("halt...\n");
-	// for (;;)
-	// {
-	// 	// int x = 1;
-	// 	__asm__("hlt");
-	// 	lock_scheduler();
-	// 	schedule();
-	// 	unlock_scheduler();
-	// }
 
 	exit_task_function();
 }
@@ -77,7 +70,6 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 void test_heap()
 {
 	milli_sleep(5000);
-
 	clear_screen();
 	print_heap(get_current_heap());
 

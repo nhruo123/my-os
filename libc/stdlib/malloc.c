@@ -4,15 +4,28 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <mmnger/mmnger_virtual.h>
+#include <multitasking/task.h>
 #include "linked_list.h"
 
-heap_t * current_heap = NULL;
+heap_t *current_heap = NULL;
+semaphore_t *heap_mutex = NULL;
 
-void set_current_heap(heap_t * heap) {
+void set_current_heap(heap_t *heap)
+{
     current_heap = heap;
 }
-heap_t * get_current_heap() {
+
+heap_t *get_current_heap()
+{
     return current_heap;
+}
+
+void init_heap_mutex()
+{
+    if (heap_mutex == NULL)
+    {
+        heap_mutex = create_mutex();
+    }
 }
 
 static void combine_nodes(list_node_t *first, list_node_t *second, heap_t *heap)
@@ -90,6 +103,11 @@ heap_t *self_map_heap(heap_t heap)
 
 void *aligned_malloc_h(size_t size, size_t alignment, heap_t *heap)
 {
+    if (heap_mutex != NULL)
+    {
+        acquire_mutex(heap_mutex);
+    }
+
     if (alignment % 4 != 0)
     {
         abort();
@@ -107,6 +125,10 @@ void *aligned_malloc_h(size_t size, size_t alignment, heap_t *heap)
         if (!heap->is_heap_static && heap->max_end_address > heap->end_address)
         {
             add_page_to_heap(heap);
+                if (heap_mutex != NULL)
+                {
+                    release_mutex(heap_mutex);
+                }
             return aligned_malloc_h(size, alignment, heap);
         }
         return NULL;
@@ -114,7 +136,6 @@ void *aligned_malloc_h(size_t size, size_t alignment, heap_t *heap)
 
     uint32_t offset = find_alligned_node_offset(free_node, alignment);
 
-    
     list_node_t free_node_copy = {0};
     memcpy(&free_node_copy, free_node, sizeof(list_node_t));
 
@@ -146,6 +167,11 @@ void *aligned_malloc_h(size_t size, size_t alignment, heap_t *heap)
     node_footer_t *free_node_footer = (void *)free_node + size + sizeof(list_node_t);
     free_node_footer->node = free_node;
 
+    if (heap_mutex != NULL)
+    {
+        release_mutex(heap_mutex);
+    }
+
     return (void *)free_node + sizeof(list_node_t);
 }
 
@@ -156,6 +182,10 @@ void *malloc_h(size_t size, heap_t *heap)
 
 void free_h(void *ptr, heap_t *heap)
 {
+    if (heap_mutex != NULL)
+    {
+        acquire_mutex(heap_mutex);
+    }
 
     list_node_t *free_node = (list_node_t *)(ptr - sizeof(list_node_t));
 
@@ -163,45 +193,49 @@ void free_h(void *ptr, heap_t *heap)
 
     // try to combine next adjacent block
     try_combine_adjacent_nodes(heap, heap->start_node);
+
+    if (heap_mutex != NULL)
+    {
+        release_mutex(heap_mutex);
+    }
 }
 
-void* malloc (size_t size) {
+void *malloc(size_t size)
+{
     return malloc_h(size, get_current_heap());
 }
 
-void *aligned_malloc(size_t size, size_t alignment) {
+void *aligned_malloc(size_t size, size_t alignment)
+{
     return aligned_malloc_h(size, alignment, get_current_heap());
 }
 
-void free (void* ptr) {
+void free(void *ptr)
+{
     free_h(ptr, get_current_heap());
 }
 
-
-
-
 void print_heap(heap_t *heap)
 {
-    
+
     printf("heap = 0x%x = {start_address: 0x%x , end_address: 0x%x , max_end_address: 0x%x , is_kernel_only: %d , is_read_only: %d , is_heap_static: %d } \n",
-     (uint32_t)heap, (uint32_t)heap->start_address, (uint32_t)heap->end_address,
-     (uint32_t)heap->max_end_address, (uint32_t)heap->is_kernel_only ,
-     (uint32_t)heap->is_read_only , (uint32_t)heap->is_heap_static);
+           (uint32_t)heap, (uint32_t)heap->start_address, (uint32_t)heap->end_address,
+           (uint32_t)heap->max_end_address, (uint32_t)heap->is_kernel_only,
+           (uint32_t)heap->is_read_only, (uint32_t)heap->is_heap_static);
 
     size_t index = 0;
-    list_node_t * node = heap->start_node;
-    
+    list_node_t *node = heap->start_node;
 
     while (node != NULL)
     {
-        node_footer_t * footer = (void *)node + node->size + sizeof(list_node_t);
+        node_footer_t *footer = (void *)node + node->size + sizeof(list_node_t);
         if (footer->node != node)
         {
             printf("ERROR FOOTER ISNT POINTING TO NODE \n");
         }
 
-        printf("node(%d) = 0x%x{ size: %d , is_free: %d , next: 0x%x  } \n", 
-        index, (uint32_t)node, node->size, (uint32_t)node->is_free, (uint32_t)node->next);
+        printf("node(%d) = 0x%x{ size: %d , is_free: %d , next: 0x%x  } \n",
+               index, (uint32_t)node, node->size, (uint32_t)node->is_free, (uint32_t)node->next);
 
         printf("footer(%d) = 0x%x{ node: 0x%x  } \n", index, (uint32_t)footer, footer->node);
 

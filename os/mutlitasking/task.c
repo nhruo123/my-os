@@ -165,6 +165,65 @@ void unlock_kernel_stuff()
     }
 }
 
+semaphore_t *create_semaphore(uint32_t max_count) {
+    semaphore_t *semaphore;
+ 
+    semaphore = malloc(sizeof(semaphore_t));
+    if(semaphore != NULL) {
+        semaphore->max_count = max_count;
+        semaphore->current_count = 0;
+        semaphore->first_waiting_task = NULL;
+        semaphore->last_waiting_task = NULL;
+    }
+
+    return semaphore;
+}
+ 
+semaphore_t *create_mutex() {
+    return create_semaphore(1);
+}
+
+void acquire_semaphore(semaphore_t * semaphore) {
+    lock_kernel_stuff();
+    if(semaphore->current_count < semaphore->max_count) {
+        semaphore->current_count++;
+    } else {
+        current_active_task->next_task = NULL;
+        if(semaphore->first_waiting_task == NULL) {
+            semaphore->first_waiting_task = current_active_task;
+        } else {
+            semaphore->last_waiting_task->next_task = current_active_task;
+        }
+        semaphore->last_waiting_task = current_active_task;
+        block_current_task(WAITING_FOR_LOCK);
+    }
+    unlock_kernel_stuff();
+}
+ 
+void acquire_mutex(semaphore_t * semaphore) {
+    acquire_semaphore(semaphore);
+}
+
+void release_semaphore(semaphore_t * semaphore) {
+    lock_kernel_stuff();
+ 
+    if(semaphore->first_waiting_task != NULL) { 
+        task_t *task = semaphore->first_waiting_task;
+        semaphore->first_waiting_task = task->next_task;
+        unblock_task(task);
+    } else {
+        semaphore->current_count--;
+    }
+    unlock_kernel_stuff();
+}
+ 
+void release_mutex(semaphore_t * semaphore) {
+    release_semaphore(semaphore);
+}
+
+
+
+
 void milli_sleep(uint32_t milliseconds)
 {
     milli_sleep_until(millisecond_since_boot + milliseconds);

@@ -30,6 +30,7 @@ void abort(void);
 
 
 heap_t * self_map_heap(heap_t heap);
+void init_heap_mutex();
 void* malloc_h (size_t size, heap_t * heap);
 void *aligned_malloc_h(size_t size, size_t alignment, heap_t *heap);
 void free_h (void* ptr, heap_t * heap);
