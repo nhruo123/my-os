@@ -26,6 +26,7 @@ void init_timer() {
 
 void timer_interrupt_handler(registers_t regs) {
     lock_kernel_stuff();
+    
     millisecond_since_boot++;
 
     task_t *next_task;
@@ -45,6 +46,13 @@ void timer_interrupt_handler(registers_t regs) {
         {
             this_task->next_task = sleeping_task_list;
             sleeping_task_list = this_task;
+        }
+    }
+
+    if(current_time_slice_remaining != ONLY_TASK_RUNNING) {
+        current_time_slice_remaining--;
+        if(current_time_slice_remaining == ONLY_TASK_RUNNING) {
+            schedule();
         }
     }
     

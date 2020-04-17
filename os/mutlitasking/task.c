@@ -22,6 +22,7 @@ uint32_t cpu_idle_time;
 
 uint32_t postpone_task_switches_counter;
 uint32_t task_switches_postponed_flag;
+uint32_t current_time_slice_remaining;
 
 
 void exit_task_function()
@@ -60,6 +61,7 @@ void init_tasking()
     
     last_tick_counter = 0;
     cpu_idle_time = 0;
+    current_time_slice_remaining = 0;
 
     current_active_task = malloc(sizeof(task_t));
     current_active_task->regs.address_space = get_current_address_space();
@@ -84,7 +86,7 @@ void schedule()
     {
         task_t *task = ready_to_run_list;
         ready_to_run_list = task->next_task;
-        switch_task(task);
+        switch_task_warpper(task);
     } else if (current_active_task->status == RUNNING)
     {
         return;
@@ -111,8 +113,12 @@ void schedule()
         postpone_task_switches_counter--;
         
         if(last_active_task != current_active_task)  {
-            switch_task(last_active_task);
+            switch_task_warpper(last_active_task);
+        } else
+        {
+            current_active_task->status = RUNNING;
         }
+        
     }
 }
 
@@ -202,7 +208,7 @@ void unblock_task(task_t *task)
     task->status = READY_TO_RUN;
     if (ready_to_run_list == NULL)
     {
-        switch_task(task);
+        switch_task_warpper(task);
     }
     else
     {
@@ -210,6 +216,25 @@ void unblock_task(task_t *task)
         last_ready_to_run_task = task;
     }
     unlock_scheduler();
+}
+
+void switch_task_warpper(task_t *new_task) {
+    if(postpone_task_switches_counter != 0) {
+        task_switches_postponed_flag = 1;
+        push_task_back_to_ready(new_task);
+        return;
+    }
+
+    if(current_active_task == NULL) {
+        current_time_slice_remaining = 0;
+    } else if((ready_to_run_list == NULL) && (current_active_task->status != RUNNING)) {
+        current_time_slice_remaining = 0;
+    } else
+    {
+        current_time_slice_remaining = TAKS_TIME_SLICE;
+    }
+    
+    switch_task(new_task);
 }
 
 task_t *create_task(void (*entry_point)())

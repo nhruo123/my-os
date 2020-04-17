@@ -12,6 +12,9 @@
 #define TERMINATED_TASK 2
 #define SLEEPING_TASK   3
 
+#define TAKS_TIME_SLICE     50 // im millisecond
+#define ONLY_TASK_RUNNING  0
+
 
 typedef struct task_regs_s {
     uint32_t esp, esp0;
@@ -26,6 +29,8 @@ typedef struct task_s {
     uint32_t sleep_expiry;
 } task_t; // size is 12 + 4 + 4 + 4 == (24)
 
+
+extern uint32_t current_time_slice_remaining;
 
 extern task_t *current_active_task;
 extern task_t *sleeping_task_list;
@@ -59,7 +64,7 @@ task_t * create_task(void (* entry_point)());
 void schedule();
 
 
-
+void switch_task_warpper(task_t *new_task);
 
 extern void switch_task(task_t *new_task);
 
