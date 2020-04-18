@@ -144,6 +144,17 @@ void __attribute__((section(".bootstrap"))) init_bit_map(multiboot_info_t *mbt, 
 
     bootstrap_map_pages(mbt->framebuffer_addr_lower, mbt->framebuffer_addr_lower, 1, pd, self_mapped_heap); // maps bootsrap ljmp code
 
+    multiboot_module_t *mods_array = mbt->mods_addr;
+
+    bootstrap_map_pages(mbt->mods_addr, mbt->mods_addr, 1, pd, self_mapped_heap); // maps bootsrap ljmp code
+
+    for (size_t i = 0; i < mbt->mods_count; i++)
+    {
+        bootstrap_map_pages(mods_array[i].mod_start, mods_array[i].mod_start, (mods_array[i].mod_end - mods_array[i].mod_start + (PAGE_SIZE - 1)) / PAGE_SIZE , pd, self_mapped_heap);
+    }
+    
+    
+
     // bootstrap_map_pages(0xB8000, 0xB8000, 1, pd, self_mapped_heap); // maps bootsrap ljmp code
 
     asm("movl %0, %%eax; movl %%eax, %%cr3;" ::"r"(pd));

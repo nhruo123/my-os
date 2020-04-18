@@ -17,6 +17,7 @@ os:
 bootdisk: os
 	mkdir -p isodir/boot/grub
 	cp $(OS) isodir/boot/os.elf
+	cp test.tar isodir/boot/test.tar
 	cp grub.cfg isodir/boot/grub/grub.cfg
 	grub-mkrescue -o $(DISK_IMG) isodir
 

@@ -197,6 +197,15 @@ void pmmngr_init(multiboot_info_t *mbt)
 	{
 		mmap_set_bit(mmap_adress_to_bit(page));
 	}
+	multiboot_module_t *mods_array = mbt->mods_addr;
+
+	for (size_t i = 0; i < mbt->mods_count; i++)
+	{
+		for (size_t page = mods_array[i].mod_start; page <= mods_array[i].mod_end; page += PAGE_SIZE)
+		{
+			mmap_set_bit(mmap_adress_to_bit(page));
+		}
+	}
 }
 
 void *pmmngr_alloc_pages(size_t pages)

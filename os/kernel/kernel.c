@@ -7,6 +7,8 @@
 #include <interrupts/interrupts.h>
 #include <interrupts/isr.h>
 #include <multitasking/task.h>
+#include <fs/fs.h>
+#include <fs/initrd_utars.h>
 
 #include <multiboot.h>
 #include <screen/screen.h>
@@ -59,6 +61,24 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	pmmngr_change_heap();
 	init_heap_mutex();
 	init_tasking();
+
+	root_inode = init_ustar_initrd(mbt);
+
+	dirent_t *first_file = readdir_fs(root_inode,0);
+
+	char file_name[100];
+	char file_value[200];
+
+	strcpy(file_name, "/");
+	strcat(file_name, first_file->name);
+
+	inode_t *file_inode = finddir_fs(root_inode, file_name);
+
+	read_fs(file_inode,0,200,file_value);
+
+	printf("file name :\" %s \" and file content is : \" %s \" \n", file_name, file_value);
+
+
 
 	task_t *new_task = create_task(test_heap);
 
