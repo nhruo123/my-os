@@ -38,7 +38,6 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	kprint("Starting init idt....\n");
 
 	init_idt();
-	init_timer();
 
 	register_interrupt_handler(33, &keyboard_call);
 
@@ -61,6 +60,7 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	pmmngr_change_heap();
 	init_heap_mutex();
 	init_tasking();
+	init_timer();
 
 	root_inode = init_ustar_initrd(mbt);
 

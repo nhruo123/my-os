@@ -7,15 +7,23 @@
 #include <mmnger/context_management.h>
 #include <mmnger/mmnger_virtual.h>
 
-#define RUNNING             0
-#define READY_TO_RUN        1
-#define TERMINATED_TASK     2
-#define SLEEPING_TASK       3
-#define WAITING_FOR_LOCK    4
+#define LOWEST_GENERAL_STATUS   1
 
-#define TAKS_TIME_SLICE     50 // im millisecond
-#define ONLY_TASK_RUNNING   0
+#define RUNNING                 0
+#define READY_TO_RUN            1
+#define TERMINATED_TASK         2
+#define SLEEPING_TASK           3
 
+#define HIGHEST_GENERAL_STATUS  3
+
+#define WAITING_FOR_LOCK        4
+
+#define TAKS_TIME_SLICE         50 // im millisecond
+#define ONLY_TASK_RUNNING       0
+
+extern uint32_t IRQ_disable_counter;
+extern uint32_t postpone_task_switches_counter;
+extern uint32_t task_switches_postponed_flag;
 
 typedef struct task_regs_s {
     uint32_t esp, esp0;
@@ -30,20 +38,31 @@ typedef struct task_s {
     uint32_t sleep_expiry;
 } task_t; // size is 12 + 4 + 4 + 4 == (24)
 
+typedef struct task_list_s {
+    task_t* first_task;
+    task_t* last_task;
+} task_list_t;
+
 typedef struct semaphore_s {
     uint32_t max_count;
     uint32_t current_count;
-    task_t *first_waiting_task;
-    task_t *last_waiting_task;
+    task_list_t task_list;
 } semaphore_t;
 
 extern uint32_t current_time_slice_remaining;
 
 extern task_t *current_active_task;
-extern task_t *sleeping_task_list;
+extern task_list_t *task_lists;
 
-extern task_t *ready_to_run_list;
-extern task_t *last_task;
+
+
+void add_task_to_list(task_list_t* list, task_t* task);
+task_t* pop_task_form_list(task_list_t* list);
+task_t *peek_into_list(task_list_t* list);
+
+void add_task_to_general_list(uint32_t list_status, task_t *task);
+task_t *pop_task_form_general_list(uint32_t list_status);
+task_t *peek_into_general_list(uint32_t list_status);
 
 void exit_task_function();
 static void start_task_function();
@@ -68,7 +87,6 @@ void milli_sleep(uint32_t milliseconds);
 void milli_sleep_until(uint32_t until_when);
 
 void update_time_used();
-void push_task_back_to_ready(task_t *task);
 
 void block_current_task(uint32_t reason);
 void unblock_task(task_t * task);

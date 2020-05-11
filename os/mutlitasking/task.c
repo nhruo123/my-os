@@ -6,34 +6,28 @@
 #include <stdlib.h>
 #include <interrupts/timer.h>
 
+task_list_t *task_lists;
+
 task_t *current_active_task;
 
-task_t *ready_to_run_list;
-task_t *last_ready_to_run_task;
-
-task_t *termintaed_task_list;
-
-task_t *sleeping_task_list;
+// task_t *ready_to_run_list;
+// task_t *last_ready_to_run_task;
 
 uint32_t IRQ_disable_counter;
 
-uint32_t last_tick_counter;
-uint32_t cpu_idle_time;
-
 uint32_t postpone_task_switches_counter;
 uint32_t task_switches_postponed_flag;
-uint32_t current_time_slice_remaining;
 
+uint32_t last_tick_counter;
+uint32_t cpu_idle_time;
+uint32_t current_time_slice_remaining;
 
 void exit_task_function()
 {
     lock_kernel_stuff();
 
-    lock_scheduler();
-    current_active_task->next_task = termintaed_task_list;
-    termintaed_task_list = current_active_task;
-    unlock_scheduler();
-    
+    add_task_to_general_list(TERMINATED_TASK, current_active_task);
+
     block_current_task(TERMINATED_TASK);
 
     unlock_kernel_stuff();
@@ -53,12 +47,64 @@ static void *push_to_other_stack(uint32_t value, void *stack_top)
     return return_value;
 }
 
+
+static uint32_t general_list_index_from_status(uint32_t list_status) {
+    return task_lists + (list_status - LOWEST_GENERAL_STATUS);
+}
+
+void add_task_to_general_list(uint32_t list_status, task_t *task)
+{
+    add_task_to_list(general_list_index_from_status(list_status),  task);
+}
+
+task_t *pop_task_form_general_list(uint32_t list_status)
+{
+    pop_task_form_list(general_list_index_from_status(list_status));
+}
+task_t *peek_into_general_list(uint32_t list_status) 
+{
+    peek_into_list(general_list_index_from_status(list_status));
+}
+
+void add_task_to_list(task_list_t* list, task_t* task) {
+    if (list->first_task == NULL)
+    {
+        list->first_task = task;
+        list->last_task = task;
+    }
+    else
+    {
+        list->last_task->next_task = task;
+        list->last_task = task;
+    }
+}
+
+task_t* pop_task_form_list(task_list_t* list) {
+    if (list->first_task != NULL)
+    {
+        task_t* poped_task = list->first_task;
+        list->first_task = poped_task->next_task;
+        if(list->first_task == NULL) {
+            list->last_task = NULL;
+        }
+        return poped_task;
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+task_t *peek_into_list(task_list_t* list) {
+    return list->first_task;
+}
+
 void init_tasking()
 {
     postpone_task_switches_counter = 0;
     task_switches_postponed_flag = 0;
     IRQ_disable_counter = 0;
-    
+
     last_tick_counter = 0;
     cpu_idle_time = 0;
     current_time_slice_remaining = 0;
@@ -68,10 +114,9 @@ void init_tasking()
     current_active_task->status = RUNNING;
     current_active_task->millisecond_used = 0;
 
-    sleeping_task_list = NULL;
-    ready_to_run_list = NULL;
-    last_ready_to_run_task = NULL;
-    termintaed_task_list = NULL;
+    task_lists = malloc(sizeof(task_list_t) * (HIGHEST_GENERAL_STATUS - LOWEST_GENERAL_STATUS + 1));
+    memset(task_lists, 0, sizeof(task_list_t) * (HIGHEST_GENERAL_STATUS - LOWEST_GENERAL_STATUS + 1));
+
 }
 
 // loock needs to called before calling this!!
@@ -82,15 +127,17 @@ void schedule()
         task_switches_postponed_flag = 1;
         return;
     }
-    if (ready_to_run_list != NULL)
+    if (peek_into_general_list(READY_TO_RUN) != NULL)
     {
-        task_t *task = ready_to_run_list;
-        ready_to_run_list = task->next_task;
+        
+        task_t *task = pop_task_form_general_list(READY_TO_RUN);
         switch_task_warpper(task);
-    } else if (current_active_task->status == RUNNING)
+    }
+    else if (current_active_task->status == RUNNING)
     {
         return;
-    } else
+    }
+    else
     {
         task_t *last_active_task = current_active_task;
         current_active_task = NULL;
@@ -102,127 +149,26 @@ void schedule()
             asm("STI;");
             asm("HLT;");
             asm("CLI;");
-        } while (ready_to_run_list == NULL);
+        } while (peek_into_general_list(READY_TO_RUN) == NULL);
 
+        update_time_used();
 
         current_active_task = last_active_task;
 
-        last_active_task = ready_to_run_list;
-        ready_to_run_list = ready_to_run_list->next_task;
+        task_t *read_task = pop_task_form_general_list(READY_TO_RUN);
 
         postpone_task_switches_counter--;
-        
-        if(last_active_task != current_active_task)  {
-            switch_task_warpper(last_active_task);
-        } else
+
+        if (read_task != current_active_task)
+        {
+            switch_task_warpper(read_task);
+        }
+        else
         {
             current_active_task->status = RUNNING;
         }
-        
     }
 }
-
-// locks for scheduler
-void lock_scheduler()
-{
-    asm("CLI;");
-    IRQ_disable_counter++;
-}
-
-void unlock_scheduler()
-{
-    IRQ_disable_counter--;
-    if (IRQ_disable_counter == 0)
-    {
-        asm("STI;");
-    }
-}
-
-// locks for kernel use
-
-void lock_kernel_stuff()
-{
-    asm("CLI;");
-    IRQ_disable_counter++;
-    postpone_task_switches_counter++;
-}
-
-void unlock_kernel_stuff()
-{
-    postpone_task_switches_counter--;
-    if (postpone_task_switches_counter == 0)
-    {
-        if (task_switches_postponed_flag != 0)
-        {
-            task_switches_postponed_flag = 0;
-            schedule();
-        }
-    }
-    IRQ_disable_counter--;
-    if (IRQ_disable_counter == 0)
-    {
-        asm("STI;");
-    }
-}
-
-semaphore_t *create_semaphore(uint32_t max_count) {
-    semaphore_t *semaphore;
- 
-    semaphore = malloc(sizeof(semaphore_t));
-    if(semaphore != NULL) {
-        semaphore->max_count = max_count;
-        semaphore->current_count = 0;
-        semaphore->first_waiting_task = NULL;
-        semaphore->last_waiting_task = NULL;
-    }
-
-    return semaphore;
-}
- 
-semaphore_t *create_mutex() {
-    return create_semaphore(1);
-}
-
-void acquire_semaphore(semaphore_t * semaphore) {
-    lock_kernel_stuff();
-    if(semaphore->current_count < semaphore->max_count) {
-        semaphore->current_count++;
-    } else {
-        current_active_task->next_task = NULL;
-        if(semaphore->first_waiting_task == NULL) {
-            semaphore->first_waiting_task = current_active_task;
-        } else {
-            semaphore->last_waiting_task->next_task = current_active_task;
-        }
-        semaphore->last_waiting_task = current_active_task;
-        block_current_task(WAITING_FOR_LOCK);
-    }
-    unlock_kernel_stuff();
-}
- 
-void acquire_mutex(semaphore_t * semaphore) {
-    acquire_semaphore(semaphore);
-}
-
-void release_semaphore(semaphore_t * semaphore) {
-    lock_kernel_stuff();
- 
-    if(semaphore->first_waiting_task != NULL) { 
-        task_t *task = semaphore->first_waiting_task;
-        semaphore->first_waiting_task = task->next_task;
-        unblock_task(task);
-    } else {
-        semaphore->current_count--;
-    }
-    unlock_kernel_stuff();
-}
- 
-void release_mutex(semaphore_t * semaphore) {
-    release_semaphore(semaphore);
-}
-
-
-
 
 void milli_sleep(uint32_t milliseconds)
 {
@@ -239,15 +185,10 @@ void milli_sleep_until(uint32_t until_when)
     lock_kernel_stuff();
 
     current_active_task->sleep_expiry = until_when;
-
-    current_active_task->next_task = sleeping_task_list;
-    sleeping_task_list = current_active_task;
-    
+    add_task_to_general_list(SLEEPING_TASK, current_active_task);
     unlock_kernel_stuff();
 
     block_current_task(SLEEPING_TASK);
-
-    
 }
 
 void block_current_task(uint32_t reason)
@@ -265,34 +206,47 @@ void unblock_task(task_t *task)
     lock_scheduler();
 
     task->status = READY_TO_RUN;
-    if (ready_to_run_list == NULL)
+    if (peek_into_general_list(READY_TO_RUN) == NULL)
     {
         switch_task_warpper(task);
     }
     else
     {
-        last_ready_to_run_task->next_task = task;
-        last_ready_to_run_task = task;
+        add_task_to_general_list(READY_TO_RUN, task);
     }
     unlock_scheduler();
 }
 
-void switch_task_warpper(task_t *new_task) {
-    if(postpone_task_switches_counter != 0) {
+void switch_task_warpper(task_t *new_task)
+{
+    if (postpone_task_switches_counter != 0)
+    {
         task_switches_postponed_flag = 1;
-        push_task_back_to_ready(new_task);
+        add_task_to_general_list(READY_TO_RUN, new_task);
         return;
     }
 
-    if(current_active_task == NULL) {
+    if (current_active_task == NULL)
+    {
         current_time_slice_remaining = 0;
-    } else if((ready_to_run_list == NULL) && (current_active_task->status != RUNNING)) {
+    }
+    else if ((peek_into_general_list(READY_TO_RUN) == NULL) && (current_active_task->status != RUNNING))
+    {
         current_time_slice_remaining = 0;
-    } else
+    }
+    else
     {
         current_time_slice_remaining = TAKS_TIME_SLICE;
     }
+
+    update_time_used();
+
+    if(current_active_task->status == RUNNING) {
+        add_task_to_general_list(READY_TO_RUN, current_active_task);
+        current_active_task->status = READY_TO_RUN;
+    }
     
+
     switch_task(new_task);
 }
 
@@ -333,16 +287,7 @@ task_t *create_task(void (*entry_point)())
     task->regs.esp0 = task->regs.esp;
 
     // adds the task for ready to run list
-    if (ready_to_run_list == NULL)
-    {
-        ready_to_run_list = task;
-        last_ready_to_run_task = task;
-    }
-    else
-    {
-        last_ready_to_run_task->next_task = task;
-        last_ready_to_run_task = task;
-    }
+    add_task_to_general_list(READY_TO_RUN, task);
 
     return task;
 }
@@ -353,21 +298,12 @@ void update_time_used()
     uint32_t elapsed = current_count - last_tick_counter;
     last_tick_counter = current_count;
 
-    if(current_active_task == NULL) {
-        cpu_idle_time += elapsed;
-    } else {
-        current_active_task->millisecond_used += elapsed;
-    }
-}
-
-void push_task_back_to_ready(task_t *task) {
-    if(ready_to_run_list == NULL) {
-        ready_to_run_list = task;
-        last_ready_to_run_task = task;
-        
-    } else
+    if (current_active_task == NULL)
     {
-        task->next_task = last_ready_to_run_task;
-        last_ready_to_run_task = task;
+        cpu_idle_time += elapsed;
+    }
+    else
+    {
+        current_active_task->millisecond_used += elapsed;
     }
 }
