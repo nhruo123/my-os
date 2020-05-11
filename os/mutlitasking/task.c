@@ -21,6 +21,7 @@ uint32_t task_switches_postponed_flag;
 uint32_t last_tick_counter;
 uint32_t cpu_idle_time;
 uint32_t current_time_slice_remaining;
+uint32_t last_allocated_pid;
 
 void exit_task_function()
 {
@@ -122,12 +123,17 @@ void init_tasking()
     current_time_slice_remaining = 0;
 
     current_active_task = malloc(sizeof(task_t));
+    memset(current_active_task, 0, sizeof(task_t));
+
+    current_active_task->pid = 0;
     current_active_task->regs.address_space = get_current_address_space();
     current_active_task->status = RUNNING;
     current_active_task->millisecond_used = 0;
 
     task_lists = malloc(sizeof(task_list_t) * (HIGHEST_GENERAL_STATUS - LOWEST_GENERAL_STATUS + 1));
     memset(task_lists, 0, sizeof(task_list_t) * (HIGHEST_GENERAL_STATUS - LOWEST_GENERAL_STATUS + 1));
+
+    last_allocated_pid = 0;
 }
 
 // loock needs to called before calling this!!
@@ -274,6 +280,7 @@ void switch_task_warpper(task_t *new_task)
 task_t *create_task(void (*entry_point)())
 {
     task_t *task = malloc(sizeof(task_t));
+    memset(task,0,sizeof(task_t));
 
     address_space_t new_address_space = create_new_address_space();
     task->regs.address_space = new_address_space;
@@ -281,7 +288,9 @@ task_t *create_task(void (*entry_point)())
     task->status = READY_TO_RUN;
     task->next_task = NULL;
     task->millisecond_used = 0;
-
+    last_allocated_pid++;
+    task->pid = last_allocated_pid;
+    
     page_dir_entry_t old_dir = mount_address_space_on_temp_dir(new_address_space);
 
     page_dir_entry_t new_stack_page_dir = *((page_dir_entry_t *)&reserved_temp_table[STACK_TABLE]);
