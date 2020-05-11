@@ -82,6 +82,8 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 
 	task_t *new_task = create_task(test_heap);
 
+	wait_for_task_to_exit(new_task);
+
 	kprint("halt...\n");
 
 	exit_task_function();

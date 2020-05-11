@@ -17,6 +17,7 @@
 #define HIGHEST_GENERAL_STATUS  3
 
 #define WAITING_FOR_LOCK        4
+#define WAITING_FOR_TASK_EXIT   4
 
 #define TAKS_TIME_SLICE         50 // im millisecond
 #define ONLY_TASK_RUNNING       0
@@ -30,18 +31,24 @@ typedef struct task_regs_s {
     address_space_t address_space;
 } task_regs_t; // size is (4 + 4 + 4) == 12
 
+
+struct task_list_s {
+    struct task_s* first_task;
+    struct task_s* last_task;
+};
+
+typedef struct task_list_s task_list_t;
+
 typedef struct task_s {
     task_regs_t regs;
     struct task_s *next_task;
     uint32_t status;
     uint32_t millisecond_used;
     uint32_t sleep_expiry;
+    struct task_list_s tasks_wating_for_exit;
 } task_t; // size is 12 + 4 + 4 + 4 == (24)
 
-typedef struct task_list_s {
-    task_t* first_task;
-    task_t* last_task;
-} task_list_t;
+
 
 typedef struct semaphore_s {
     uint32_t max_count;
@@ -68,6 +75,8 @@ void exit_task_function();
 static void start_task_function();
 static void *push_to_other_stack(uint32_t value, void* stack_top);
 
+
+void wait_for_task_to_exit(task_t* task);
 
 void lock_scheduler(); 
 void unlock_scheduler();

@@ -26,6 +26,14 @@ void exit_task_function()
 {
     lock_kernel_stuff();
 
+    task_t *wating_task = pop_task_form_list(&current_active_task->tasks_wating_for_exit);
+
+    while (wating_task != NULL)
+    {
+        unblock_task(wating_task);
+        wating_task = pop_task_form_list(&current_active_task->tasks_wating_for_exit);
+    }
+
     add_task_to_general_list(TERMINATED_TASK, current_active_task);
 
     block_current_task(TERMINATED_TASK);
@@ -47,26 +55,27 @@ static void *push_to_other_stack(uint32_t value, void *stack_top)
     return return_value;
 }
 
-
-static uint32_t general_list_index_from_status(uint32_t list_status) {
+static uint32_t general_list_index_from_status(uint32_t list_status)
+{
     return task_lists + (list_status - LOWEST_GENERAL_STATUS);
 }
 
 void add_task_to_general_list(uint32_t list_status, task_t *task)
 {
-    add_task_to_list(general_list_index_from_status(list_status),  task);
+    add_task_to_list(general_list_index_from_status(list_status), task);
 }
 
 task_t *pop_task_form_general_list(uint32_t list_status)
 {
     pop_task_form_list(general_list_index_from_status(list_status));
 }
-task_t *peek_into_general_list(uint32_t list_status) 
+task_t *peek_into_general_list(uint32_t list_status)
 {
     peek_into_list(general_list_index_from_status(list_status));
 }
 
-void add_task_to_list(task_list_t* list, task_t* task) {
+void add_task_to_list(task_list_t *list, task_t *task)
+{
     if (list->first_task == NULL)
     {
         list->first_task = task;
@@ -79,12 +88,14 @@ void add_task_to_list(task_list_t* list, task_t* task) {
     }
 }
 
-task_t* pop_task_form_list(task_list_t* list) {
+task_t *pop_task_form_list(task_list_t *list)
+{
     if (list->first_task != NULL)
     {
-        task_t* poped_task = list->first_task;
+        task_t *poped_task = list->first_task;
         list->first_task = poped_task->next_task;
-        if(list->first_task == NULL) {
+        if (list->first_task == NULL)
+        {
             list->last_task = NULL;
         }
         return poped_task;
@@ -95,7 +106,8 @@ task_t* pop_task_form_list(task_list_t* list) {
     }
 }
 
-task_t *peek_into_list(task_list_t* list) {
+task_t *peek_into_list(task_list_t *list)
+{
     return list->first_task;
 }
 
@@ -116,7 +128,6 @@ void init_tasking()
 
     task_lists = malloc(sizeof(task_list_t) * (HIGHEST_GENERAL_STATUS - LOWEST_GENERAL_STATUS + 1));
     memset(task_lists, 0, sizeof(task_list_t) * (HIGHEST_GENERAL_STATUS - LOWEST_GENERAL_STATUS + 1));
-
 }
 
 // loock needs to called before calling this!!
@@ -129,7 +140,7 @@ void schedule()
     }
     if (peek_into_general_list(READY_TO_RUN) != NULL)
     {
-        
+
         task_t *task = pop_task_form_general_list(READY_TO_RUN);
         switch_task_warpper(task);
     }
@@ -191,6 +202,16 @@ void milli_sleep_until(uint32_t until_when)
     block_current_task(SLEEPING_TASK);
 }
 
+void wait_for_task_to_exit(task_t *task)
+{
+    lock_kernel_stuff();
+
+    add_task_to_list(&task->tasks_wating_for_exit, current_active_task);
+    block_current_task(WAITING_FOR_TASK_EXIT);
+
+    unlock_kernel_stuff();
+}
+
 void block_current_task(uint32_t reason)
 {
     lock_scheduler();
@@ -241,11 +262,11 @@ void switch_task_warpper(task_t *new_task)
 
     update_time_used();
 
-    if(current_active_task->status == RUNNING) {
+    if (current_active_task->status == RUNNING)
+    {
         add_task_to_general_list(READY_TO_RUN, current_active_task);
         current_active_task->status = READY_TO_RUN;
     }
-    
 
     switch_task(new_task);
 }
