@@ -7,8 +7,11 @@
 #include <interrupts/interrupts.h>
 #include <interrupts/isr.h>
 #include <multitasking/task.h>
-#include <fs/fs.h>
-#include <fs/initrd_utars.h>
+#include <fs/vfs.h>
+#include <fs/ustars_fs.h>
+
+#include <disks/disk.h>
+#include <disks/ramdisk.h>
 
 #include <multiboot.h>
 #include <screen/screen.h>
@@ -16,7 +19,6 @@
 
 #include "../keyboard/keyboard.h"
 #include "./kernel.h"
-
 
 void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 {
@@ -62,23 +64,40 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	init_tasking();
 	init_timer();
 
-	root_inode = init_ustar_initrd(mbt);
+	init_disks();
 
-	dirent_t *first_file = readdir_fs(root_inode,0);
+	disk_t *ram_disk = create_ram_disk_form_mbt("initrd", "initrd", mbt);
 
-	char file_name[100];
-	char file_value[200];
+	register_disk(ram_disk);
 
-	strcpy(file_name, "/");
-	strcat(file_name, first_file->name);
+	char *buff = malloc(sizeof(char) * 10);
 
-	inode_t *file_inode = finddir_fs(root_inode, file_name);
+	ram_disk->read(buff, 0, 10, ram_disk);
 
-	read_fs(file_inode,0,200,file_value);
+	printf("disk buffer is %s \n", buff);
 
-	printf("file name :\" %s \" and file content is : \" %s \" \n", file_name, file_value);
+	free(buff);
 
+	init_vfs();
 
+	filesystem_t *test_fs = create_ustar_fs("test fs");
+
+	if (test_fs->probe(ram_disk) == 0)
+	{
+		ram_disk->fs = test_fs;
+		mount_disk(ram_disk, "A");
+		char file_value[200] = {0};
+		char file_name[200] = {0};
+
+		dir_entry_t dir_entry;
+
+		char *test = "A:";
+		readdir_vfs(test, &dir_entry, 0);
+		strcpy(file_name, test);
+		strcpy(strchr(file_name, ':') + 1, dir_entry.filename);
+		read_vfs(file_name, file_value, 0, 200);
+		printf("dir entry is: %s \nAnd the file contet is: %s ", dir_entry.filename, file_value);
+	}
 
 	task_t *new_task = create_task(test_heap);
 
