@@ -103,7 +103,11 @@ static uint32_t *ustar_readdir(char *filename, dir_entry_t *dir_entry, uint32_t 
             {
                 if (index == 0)
                 {
-                    strcpy(dir_entry->filename, current_header.name);
+                    if(strrchr(current_header.name, FILE_SEPARTOR) != NULL) {
+                        strcpy(dir_entry->filename, strrchr(current_header.name, FILE_SEPARTOR));
+                    } else {
+                        strcpy(dir_entry->filename, current_header.name);
+                    }
                     return 1;
                 }
                 else

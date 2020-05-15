@@ -100,6 +100,11 @@ void init_idt() {
     idt_set_gate(47, (uint32_t)irq15, 0x08, 0x3, true);
 
 
+    // set syscall interupt
+    idt_set_gate(0x80, (uint32_t)isr128, 0x08, 0x3, true);
+
+
+
     idt_flush(idt_ptr);
 }
 

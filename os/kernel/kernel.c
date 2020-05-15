@@ -16,6 +16,8 @@
 #include <multiboot.h>
 #include <screen/screen.h>
 #include <interrupts/timer.h>
+#include <interrupts/exceptions.h>
+#include <interrupts/syscall.h>
 
 #include <keyboard/keyboard.h>
 #include "./kernel.h"
@@ -40,6 +42,8 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	kprint("Starting init idt....\n");
 
 	init_idt();
+	register_interrupt_handler(14, page_fault_handler);
+	init_syscalls();
 
 	kprint("Done init idt\n");
 

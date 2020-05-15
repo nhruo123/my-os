@@ -58,6 +58,9 @@ extern void isr30();
 extern void isr31();
 
 
+extern void isr128();
+
+
 extern void irq0();
 extern void irq1();
 extern void irq2();
