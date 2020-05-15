@@ -17,7 +17,7 @@
 #include <screen/screen.h>
 #include <interrupts/timer.h>
 
-#include "../keyboard/keyboard.h"
+#include <keyboard/keyboard.h>
 #include "./kernel.h"
 
 void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
@@ -41,8 +41,6 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 
 	init_idt();
 
-	register_interrupt_handler(33, &keyboard_call);
-
 	kprint("Done init idt\n");
 
 	// init real heap
@@ -63,6 +61,15 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	init_heap_mutex();
 	init_tasking();
 	init_timer();
+
+	init_keyboard();
+
+	printf("type 15 times to coninue \n");
+	for (size_t i = 0; i < 15; i++)
+	{
+		putchar(getchar());
+	}
+	putchar('\n');
 
 	init_disks();
 
@@ -85,13 +92,13 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	if (test_fs->probe(ram_disk) == 0)
 	{
 		ram_disk->fs = test_fs;
-		mount_disk(ram_disk, "A");
+		mount_disk(ram_disk, "a");
 		char file_value[200] = {0};
 		char file_name[200] = {0};
 
 		dir_entry_t dir_entry;
 
-		char *test = "A:";
+		char *test = "a:";
 		readdir_vfs(test, &dir_entry, 0);
 		strcpy(file_name, test);
 		strcpy(strchr(file_name, ':') + 1, dir_entry.filename);

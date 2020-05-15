@@ -17,7 +17,8 @@
 #define HIGHEST_GENERAL_STATUS  3
 
 #define WAITING_FOR_LOCK        4
-#define WAITING_FOR_TASK_EXIT   4
+#define WAITING_FOR_TASK_EXIT   5
+#define WAITING_FOR_HARDWARE  6
 
 #define TAKS_TIME_SLICE         50 // im millisecond
 #define ONLY_TASK_RUNNING       0
