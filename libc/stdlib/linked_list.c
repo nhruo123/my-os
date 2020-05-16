@@ -16,6 +16,12 @@ static bool is_region_good_for_alloc(list_node_t *node, size_t size, size_t alig
 
     size_t front_leftover = node->size - offset - size;
 
+    // we dont want our heap pointer to stay at null
+    if (front_leftover == 0 && node->next == NULL)
+    {
+        return false;
+    }
+    
     if (front_leftover > 0 && front_leftover < (sizeof(list_node_t) + sizeof(node_footer_t)))
     {
         return false;

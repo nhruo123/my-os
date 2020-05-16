@@ -27,6 +27,7 @@ typedef struct filesystem_s {
     uint32_t (* write)(char* filename, char* buffer, uint32_t offset, uint32_t size, struct disk_s * disk);
     uint32_t (* read_dir)(char* filename, dir_entry_t* buffer, uint32_t index, struct disk_s * disk); // buffer needs to be MAX_NAME_SIZE
     uint32_t (* mk_file)(char* filename, uint32_t file_type, struct disk_s * disk);
+    uint32_t (* stats)(char* filename, struct file_stats_s* file_stats, struct disk_s * disk);
 
     void *private;
 
@@ -37,6 +38,9 @@ typedef struct mount_point_s {
     struct disk_s* disk;
 } mount_point_t ;
 
+typedef struct file_stats_s {
+    uint32_t size;
+} file_stats_t;
 
 
 
@@ -46,6 +50,7 @@ uint32_t read_vfs(char* file_path, char* buffer, uint32_t offset, uint32_t size)
 uint32_t write_vfs(char* file_path, char* buffer, uint32_t offset, uint32_t size);
 uint32_t readdir_vfs(char* file_path, dir_entry_t* dir_entry, uint32_t index);
 uint32_t mk_file_vfs(char* file_path, uint32_t file_type);
+uint32_t stats_vfs(char* file_path, struct file_stats_s* file_stats);
 
 
 

@@ -38,6 +38,9 @@ typedef struct address_space_s {
 #define STACK_TOP 0xFF7FF000
 #define STACK_BOTTOM STACK_TOP - STACK_SIZE
 
+#define USER_STACK_TOP    0x25300000
+#define USER_STACK_BOTTOM 0x25000000
+
 
 extern uint32_t kernel_start_address;
 

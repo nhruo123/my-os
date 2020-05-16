@@ -46,6 +46,7 @@ static uint32_t find_file_offset(char *file_name, ustar_headr_t *file_header, di
 static uint32_t ustar_probe(disk_t * disk);
 static uint32_t ustar_read(char* filename, char* buffer, uint32_t offset, uint32_t size, disk_t * disk);
 static uint32_t *ustar_readdir(char* filename, dir_entry_t* dir_entry, uint32_t index, disk_t * disk);
+static uint32_t *ustar_stats(char* filename, file_stats_t* stats, disk_t * disk);
 
 filesystem_t *create_ustar_fs(char* name);
 

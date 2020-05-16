@@ -21,6 +21,7 @@
 #define GLOBAL_PAGE         0b100000000
 
 #define KERNEL_FLAGS        PRESENT_PAGE | READ_WRITE_PAGE
+#define USER_FLAGS          PRESENT_PAGE | READ_WRITE_PAGE | USER_PAGE
 
 
 // utility funcs

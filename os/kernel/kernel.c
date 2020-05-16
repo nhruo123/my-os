@@ -10,6 +10,8 @@
 #include <fs/vfs.h>
 #include <fs/ustars_fs.h>
 
+#include <misc/elf.h>
+
 #include <disks/disk.h>
 #include <disks/ramdisk.h>
 
@@ -68,12 +70,12 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 
 	init_keyboard();
 
-	printf("type 15 times to coninue \n");
-	for (size_t i = 0; i < 15; i++)
-	{
-		putchar(getchar());
-	}
-	putchar('\n');
+	// printf("type 15 times to coninue \n");
+	// for (size_t i = 0; i < 15; i++)
+	// {
+	// 	putchar(getchar());
+	// }
+	// putchar('\n');
 
 	init_disks();
 
@@ -91,6 +93,10 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 
 	init_vfs();
 
+	task_t *new_task = create_task(test_heap);
+
+	wait_for_task_to_exit(new_task);
+
 	filesystem_t *test_fs = create_ustar_fs("test fs");
 
 	if (test_fs->probe(ram_disk) == 0)
@@ -101,18 +107,18 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 		char file_name[200] = {0};
 
 		dir_entry_t dir_entry;
+		file_stats_t stats;
 
 		char *test = "a:";
 		readdir_vfs(test, &dir_entry, 0);
 		strcpy(file_name, test);
 		strcpy(strchr(file_name, ':') + 1, dir_entry.filename);
 		read_vfs(file_name, file_value, 0, 200);
-		printf("dir entry is: %s \nAnd the file contet is: %s ", dir_entry.filename, file_value);
+		stats_vfs(file_name, &stats);
+		printf("dir entry is: %s \nAt size: %d \nAnd the file contet is: %s ", dir_entry.filename, stats.size, file_value);
+
+		exec("a:hello", 0, NULL);
 	}
-
-	task_t *new_task = create_task(test_heap);
-
-	wait_for_task_to_exit(new_task);
 
 	kprint("halt...\n");
 
@@ -121,7 +127,7 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 
 void test_heap()
 {
-	milli_sleep(5000);
+	milli_sleep(500);
 	clear_screen();
 	print_heap(get_current_heap());
 

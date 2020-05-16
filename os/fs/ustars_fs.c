@@ -103,9 +103,12 @@ static uint32_t *ustar_readdir(char *filename, dir_entry_t *dir_entry, uint32_t 
             {
                 if (index == 0)
                 {
-                    if(strrchr(current_header.name, FILE_SEPARTOR) != NULL) {
+                    if (strrchr(current_header.name, FILE_SEPARTOR) != NULL)
+                    {
                         strcpy(dir_entry->filename, strrchr(current_header.name, FILE_SEPARTOR));
-                    } else {
+                    }
+                    else
+                    {
                         strcpy(dir_entry->filename, current_header.name);
                     }
                     return 1;
@@ -133,6 +136,22 @@ static uint32_t *ustar_readdir(char *filename, dir_entry_t *dir_entry, uint32_t 
     return 0;
 }
 
+static uint32_t *ustar_stats(char *filename, file_stats_t *stats, disk_t *disk)
+{
+    ustar_headr_t file_header;
+
+    uint32_t file_offset = find_file_offset(filename, &file_header, disk);
+
+    if (file_offset == 0)
+    {
+        return -1;
+    }
+
+    stats->size = oct2bin(file_header.size, 11);
+
+    return 0;
+}
+
 filesystem_t *create_ustar_fs(char *name)
 {
     size_t name_len = strlen(name);
@@ -145,5 +164,6 @@ filesystem_t *create_ustar_fs(char *name)
         fs->probe = ustar_probe;
         fs->read = ustar_read;
         fs->read_dir = ustar_readdir;
+        fs->stats = ustar_stats;
     }
 }

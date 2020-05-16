@@ -16,7 +16,7 @@ void init_gdt()
     gdt_ptr.limit = (sizeof(gdt_entry_t) * GDT_SIZE) - 1;
     gdt_ptr.base = (uint32_t)gdt_entries;
 
-    gdt_set_entry(0, 0, 0, 0, 0); // NULL 
+    gdt_set_entry(0, 0, 0, 0, 0);               // NULL
     gdt_set_entry(1, 0, 0xFFFFFFFF, 0x9A, 0xC); // KERNEL CODE
     gdt_set_entry(2, 0, 0xFFFFFFFF, 0x92, 0xC); // KERNEL DATA
 
@@ -28,11 +28,14 @@ void init_gdt()
     memset(&kernel_tss, 0, sizeof(tss_t));
 
     kernel_tss.ss0 = KERNEL_DATA_SEGMENT;
+    kernel_tss.cs = USER_CODE_SEGMENT;
+    kernel_tss.ss = kernel_tss.ds = kernel_tss.es = kernel_tss.fs = kernel_tss.gs = USER_DATA_SEGMENT;
 
     flush_gdt(&gdt_ptr);
 }
 
-void set_kernel_esp(uint32_t esp) {
+void set_kernel_esp(uint32_t esp)
+{
     kernel_tss.esp0 = esp;
 }
 

@@ -23,6 +23,8 @@ disk_t *create_ram_disk(char *name, uint32_t start_addr, uint32_t end_addr)
     new_disk->read = read_ramdisk;
     new_disk->write = write_ramdisk;
     new_disk->private = disk_priv;
+
+    return new_disk;
 }
 
 uint32_t read_ramdisk(char *buffer, uint32_t offset, uint32_t len, disk_t *ramdisk)

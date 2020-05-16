@@ -127,6 +127,31 @@ uint32_t mk_file_vfs(char *file_path, uint32_t file_type)
     return mount->disk->fs->mk_file(file_name, file_type, mount->disk);
 }
 
+uint32_t stats_vfs(char* file_path, struct file_stats_s* file_stats) 
+{
+    char mount_name[MAX_MOUNT_SIZE] = {0};
+    char file_name[MAX_FILE_NAME_SIZE] = {0};
+
+    if (split_file_name(file_path, mount_name, file_name) != 0)
+    {
+        return -1;
+    }
+
+    mount_point_t *mount = get_mount_by_name(mount_name);
+
+    if (mount == NULL)
+    {
+        return -1;
+    }
+
+    if (mount->disk->fs->stats == NULL)
+    {
+        return -1;
+    }
+
+    return mount->disk->fs->stats(file_name, file_stats, mount->disk);
+}
+
 uint32_t mount_disk(disk_t *disk, char *location)
 {
     if (next_mount_id >= MAX_MOUNTS )
