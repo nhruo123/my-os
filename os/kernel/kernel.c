@@ -93,18 +93,18 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 		mount_disk(ram_disk, "a");
 	}
 
-	task_t *new_task = create_task(test_heap);
+	task_t *new_task = create_task(test_heap, 0);
 
 	wait_for_task_to_exit(new_task);
 
-	create_task(start_shell);
+	create_task(start_shell, 1, "a:hello");
 
 	kprint("halt...\n");
 
 	exit_task_function();
 }
 
-void start_shell()
+void start_shell(char * shell_name)
 {
 	char file_value[200] = {0};
 	char file_name[200] = {0};
@@ -120,7 +120,7 @@ void start_shell()
 	stats_vfs(file_name, &stats);
 	printf("dir entry is: %s \nAt size: %d \nAnd the file contet is: %s \n", dir_entry.filename, stats.size, file_value);
 
-	exec("a:hello", 0, NULL);
+	exec(shell_name, 0, NULL);
 }
 
 void test_heap()

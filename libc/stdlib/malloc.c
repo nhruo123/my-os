@@ -3,12 +3,28 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <mmnger/mmnger_virtual.h>
-#include <multitasking/task.h>
 #include "linked_list.h"
 
+#if defined(__is_libk)
+#include <mmnger/mmnger_virtual.h>
+#include <multitasking/task.h>
+#else
+#include <syscall_wrapper/syscall_wrapper.h>
+#endif
+
 heap_t *current_heap = NULL;
+
+#if defined(__is_libk)
 semaphore_t *heap_mutex = NULL;
+
+void init_heap_mutex()
+{
+    if (heap_mutex == NULL)
+    {
+        heap_mutex = create_mutex();
+    }
+}
+#endif
 
 void set_current_heap(heap_t *heap)
 {
@@ -20,13 +36,7 @@ heap_t *get_current_heap()
     return current_heap;
 }
 
-void init_heap_mutex()
-{
-    if (heap_mutex == NULL)
-    {
-        heap_mutex = create_mutex();
-    }
-}
+
 
 static void combine_nodes(list_node_t *first, list_node_t *second, heap_t *heap)
 {
@@ -69,6 +79,7 @@ static try_combine_adjacent_nodes(heap_t *heap, list_node_t *node_to_combine)
 
 static void add_page_to_heap(heap_t *heap)
 {
+#if defined(__is_libk)
     uint16_t flags = PRESENT_PAGE;
 
     if (!heap->is_kernel_only)
@@ -85,6 +96,14 @@ static void add_page_to_heap(heap_t *heap)
     heap->end_address += PAGE_SIZE;
 
     try_combine_adjacent_nodes(heap, heap->start_node);
+#else
+    sys_map_page(heap->end_address + 0x1000);
+    heap->start_node = add_free_region(heap->start_node, heap->end_address, 0x1000 - sizeof(list_node_t) - sizeof(node_footer_t));
+    heap->end_address += 0x1000;
+
+    try_combine_adjacent_nodes(heap, heap->start_node);
+
+#endif
 }
 
 heap_t *self_map_heap(heap_t heap)
@@ -103,10 +122,12 @@ heap_t *self_map_heap(heap_t heap)
 
 void *aligned_malloc_h(size_t size, size_t alignment, heap_t *heap)
 {
+    #if defined(__is_libk)
     if (heap_mutex != NULL)
     {
         acquire_mutex(heap_mutex);
     }
+    #endif
 
     if (alignment % 4 != 0)
     {
@@ -124,11 +145,13 @@ void *aligned_malloc_h(size_t size, size_t alignment, heap_t *heap)
     {
         if (!heap->is_heap_static && heap->max_end_address > heap->end_address)
         {
+            #if defined(__is_libk)
             add_page_to_heap(heap);
-                if (heap_mutex != NULL)
-                {
-                    release_mutex(heap_mutex);
-                }
+            if (heap_mutex != NULL)
+            {
+                release_mutex(heap_mutex);
+            }
+            #endif
             return aligned_malloc_h(size, alignment, heap);
         }
         return NULL;
@@ -167,11 +190,12 @@ void *aligned_malloc_h(size_t size, size_t alignment, heap_t *heap)
     node_footer_t *free_node_footer = (void *)free_node + size + sizeof(list_node_t);
     free_node_footer->node = free_node;
 
+#if defined(__is_libk)
     if (heap_mutex != NULL)
     {
         release_mutex(heap_mutex);
     }
-
+#endif
     return (void *)free_node + sizeof(list_node_t);
 }
 
@@ -182,10 +206,12 @@ void *malloc_h(size_t size, heap_t *heap)
 
 void free_h(void *ptr, heap_t *heap)
 {
+    #if defined(__is_libk)
     if (heap_mutex != NULL)
     {
         acquire_mutex(heap_mutex);
     }
+    #endif
 
     list_node_t *free_node = (list_node_t *)(ptr - sizeof(list_node_t));
 
@@ -194,10 +220,12 @@ void free_h(void *ptr, heap_t *heap)
     // try to combine next adjacent block
     try_combine_adjacent_nodes(heap, heap->start_node);
 
+    #if defined(__is_libk)
     if (heap_mutex != NULL)
     {
         release_mutex(heap_mutex);
     }
+    #endif
 }
 
 void *malloc(size_t size)

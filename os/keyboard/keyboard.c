@@ -131,7 +131,7 @@ void init_keyboard()
     register_interrupt_handler(33, &keyboard_call);
 }
 
-char getchar()
+char get_char()
 {
     char char_to_return;
     acquire_mutex(keyboard_lock);

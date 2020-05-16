@@ -5,6 +5,8 @@
 #include <multitasking/task.h>
 #include <stdlib.h>
 #include <interrupts/timer.h>
+#include <limits.h>
+#include <stdarg.h>
 
 task_list_t *task_lists;
 
@@ -277,7 +279,7 @@ void switch_task_warpper(task_t *new_task)
     switch_task(new_task);
 }
 
-task_t *create_task(void (*entry_point)())
+task_t *create_task(void (*entry_point)(),uint32_t argc, ...)
 {
     task_t *task = malloc(sizeof(task_t));
     memset(task,0,sizeof(task_t));
@@ -300,8 +302,20 @@ task_t *create_task(void (*entry_point)())
     void *top_of_new_stack = (void *)get_page_address_from_indexes(RESERVED_TEMP_TABLE, 1023);
     void *start_of_new_stack = top_of_new_stack;
 
+    // params
+    va_list parameters;
+    va_start(parameters, argc);
+
+    for(size_t index = 0; index < argc; index++) {
+        uint32_t current_arg = va_arg(parameters,uint32_t);
+        top_of_new_stack = push_to_other_stack(current_arg, top_of_new_stack);
+    }
+
+    va_end(parameters);
+
     top_of_new_stack = push_to_other_stack((uint32_t)exit_task_function, top_of_new_stack); // push exit func location
 
+    
     top_of_new_stack = push_to_other_stack((uint32_t)entry_point, top_of_new_stack); // push entry point
 
     top_of_new_stack = push_to_other_stack((uint32_t)start_task_function, top_of_new_stack); // start func location

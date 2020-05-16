@@ -2,10 +2,50 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <interrupts/isr.h>
+#include <mmnger/mmnger_virtual.h>
+#include <multitasking/task.h>
 #include <interrupts/syscall.h>
+#include <stdlib.h>
+#include <misc/elf.h>
+
+static int allocate_page_for_user(void *loc)
+{
+    if (loc < 0X30000000)
+    {
+        vmmngr_alloc_page_and_phys(loc, USER_FLAGS);
+        return 0;
+    }
+
+    return 1;
+}
+
+static void user_exec(void *loc, int argc, char** argv)
+{
+    exec(loc,argc,argv);
+}
+
+static int user_start_task(void *loc, int argc, char** argv)
+{
+    create_task(user_exec,3, loc, argc, argv);
+    return 0;
+}
+
+static int user_start_task_and_block(void *loc, int argc, char** argv)
+{
+    task_t* task = create_task(user_exec,3, loc, argc, argv);
+    wait_for_task_to_exit(task);
+    return 0;
+}
+
+
 
 static void *syscalls[SYSCALL_COUNT] = {
-    abort,
+    exit_task_function,
+    putchar,
+    getchar,
+    allocate_page_for_user,
+    user_start_task,
+    user_start_task_and_block,
 };
 
 void init_syscalls()
@@ -41,5 +81,3 @@ static void syscall_handler(registers_t regs)
 
     regs.eax = ret_value;
 }
-
-DEFN_SYSCALL0(abort, 0)

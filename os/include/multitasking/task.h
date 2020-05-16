@@ -19,7 +19,7 @@
 
 #define WAITING_FOR_LOCK        4
 #define WAITING_FOR_TASK_EXIT   5
-#define WAITING_FOR_HARDWARE  6
+#define WAITING_FOR_HARDWARE    6
 
 #define TAKS_TIME_SLICE         50 // im millisecond
 #define ONLY_TASK_RUNNING       0
@@ -106,7 +106,7 @@ void block_current_task(uint32_t reason);
 void unblock_task(task_t * task);
 
 void init_tasking();
-task_t * create_task(void (* entry_point)());
+task_t *create_task(void (*entry_point)(),uint32_t argc, ...);
 void schedule();
 
 

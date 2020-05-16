@@ -10,6 +10,6 @@
 static void keyboard_call(registers_t regs);
 static char translate_scan_code_to_assci(char code);
 void init_keyboard();
-char getchar();
+char get_char();
 
 #endif

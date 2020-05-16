@@ -8,6 +8,8 @@
 
 #if defined(__is_libk)
 #include <screen/screen.h>
+#else
+#include <syscall_wrapper/syscall_wrapper.h>
 #endif
 
 
@@ -17,7 +19,11 @@ static int terminal_write_wrapper(const char* data, size_t size) {
 #if defined(__is_libk)
     terminal_write(data,size);
 #else
-    // TODO: SYS CALL to terminal write
+    for (size_t i = 0; i < size; i++)
+    {
+        sys_put_char(data[i]);
+    }
+    
 #endif
 }
 
