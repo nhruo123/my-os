@@ -9,7 +9,7 @@
 
 #define USTAR_BLOCK_SIZE        512
 
-#define USTAR_MAGIC             "ustar  "
+#define USTAR_MAGIC             "ustar"
 #define AUSTAR_FILE_TYPE        '0'            /* regular file */
 #define BUSTAR_FILE_TYPE        '\0'           /* regular file */
 #define USTAR_HARD_LINK_TYPE    '1'            /* hard link */

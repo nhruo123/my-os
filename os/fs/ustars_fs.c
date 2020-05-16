@@ -63,7 +63,7 @@ static uint32_t ustar_probe(disk_t *disk)
 
         disk->read(buff, 0x101, 7, disk);
 
-        return memcmp(buff, USTAR_MAGIC, 7);
+        return memcmp(buff, USTAR_MAGIC, strlen(USTAR_MAGIC));
     }
 
     return -1;

@@ -20,16 +20,27 @@ void init_gdt()
     gdt_set_entry(1, 0, 0xFFFFFFFF, 0x9A, 0xC); // KERNEL CODE
     gdt_set_entry(2, 0, 0xFFFFFFFF, 0x92, 0xC); // KERNEL DATA
 
-    gdt_set_entry(3, 0, 0xFFFFFFFF, 0xFA, 0xC); // USER CODE
-    gdt_set_entry(4, 0, 0xFFFFFFFF, 0xF2, 0xC); // USER DATA
+    // gdt_set_entry(3, 0, 0xFFFFFFFF, 0xFA, 0xC); // USER CODE
+    // gdt_set_entry(4, 0, 0xFFFFFFFF, 0xF2, 0xC); // USER DATA
 
-    gdt_set_entry(4, &kernel_tss, sizeof(tss_t), 0x89, 0x8); // TSS
+    gdt_set_entry(3, 0, 0xFFFFFFFF, 0x9A, 0xC); // USER CODE
+    gdt_set_entry(4, 0, 0xFFFFFFFF, 0x92, 0xC); // USER DATA
+
+    // gdt_set_gate(num, base, limit, 0xE9, 0x00);
+
+    gdt_set_entry(5, &kernel_tss, sizeof(tss_t), 0xE9, 0x8); // TSS
 
     memset(&kernel_tss, 0, sizeof(tss_t));
 
     kernel_tss.ss0 = KERNEL_DATA_SEGMENT;
-    kernel_tss.cs = USER_CODE_SEGMENT;
-    kernel_tss.ss = kernel_tss.ds = kernel_tss.es = kernel_tss.fs = kernel_tss.gs = USER_DATA_SEGMENT;
+
+    kernel_tss.cs = (KERNEL_DATA_SEGMENT | 0x3);
+    
+    kernel_tss.ss = (USER_DATA_SEGMENT | 0x3);
+    kernel_tss.ds = (USER_DATA_SEGMENT | 0x3);
+    kernel_tss.es = (USER_DATA_SEGMENT | 0x3);
+    kernel_tss.fs = (USER_DATA_SEGMENT | 0x3);
+    kernel_tss.gs = (USER_DATA_SEGMENT | 0x3);
 
     flush_gdt(&gdt_ptr);
 }

@@ -8,7 +8,6 @@
 #include <mmnger/context_management.h>
 #include <multitasking/task.h>
 
-
 uint32_t exec(char *filename, uint32_t argc, char **argv)
 {
     file_stats_t stats;
@@ -49,31 +48,29 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
     {
 
         Elf32_Shdr *header_entry = (Elf32_Shdr *)((void *)header + (header->e_shoff + i));
-        if (header_entry->sh_addr)
+
+        if (header_entry->sh_addr < (uint32_t)lowest_program_location)
         {
-            if (header_entry->sh_addr < (uint32_t)lowest_program_location)
-            {
-                lowest_program_location = header_entry->sh_addr;
-            }
+            lowest_program_location = header_entry->sh_addr;
+        }
 
-            if ((header_entry->sh_addr + header_entry->sh_size) - (uint32_t)lowest_program_location > program_size)
-            {
-                program_size = header_entry->sh_addr + header_entry->sh_size - (uint32_t)lowest_program_location;
-            }
+        if ((header_entry->sh_addr + header_entry->sh_size) - (uint32_t)lowest_program_location > program_size)
+        {
+            program_size = header_entry->sh_addr + header_entry->sh_size - (uint32_t)lowest_program_location;
+        }
 
-            for (size_t page = 0; page < header_entry->sh_size; page += PAGE_SIZE)
-            {
-                vmmngr_alloc_page_and_phys(header_entry->sh_addr + page, USER_FLAGS);
-            }
+        for (size_t page = 0; page < header_entry->sh_size; page += PAGE_SIZE)
+        {
+            vmmngr_alloc_page_and_phys(header_entry->sh_addr + page, USER_FLAGS);
+        }
 
-            if (header_entry->sh_type == SHT_NOBITS)
-            {
-                memset(header_entry->sh_addr, 0, header_entry->sh_size);
-            }
-            else
-            {
-                memcpy(header_entry->sh_addr, ((void *)header + header_entry->sh_offset), header_entry->sh_size);
-            }
+        if (header_entry->sh_type == SHT_NOBITS)
+        {
+            memset(header_entry->sh_addr, 0, header_entry->sh_size);
+        }
+        else
+        {
+            memcpy(header_entry->sh_addr, ((void *)header + header_entry->sh_offset), header_entry->sh_size);
         }
     }
 
@@ -104,6 +101,11 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
     current_active_task->user_heap.end_address = ((void *)heap_start + PAGE_SIZE * 2);
     current_active_task->user_heap.max_end_address = current_active_task->user_heap.end_address;
 
+    for (size_t page = current_active_task->user_heap.start_address; page <= current_active_task->user_heap.end_address; page += PAGE_SIZE)
+    {
+        vmmngr_alloc_page_and_phys(page, USER_FLAGS);
+    }
+
     heap_t *user_heap_self_mapped = self_map_heap(current_active_task->user_heap);
 
     memcpy(&current_active_task->user_heap, user_heap_self_mapped, sizeof(heap_t));
@@ -111,7 +113,7 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
     uint32_t real_argc = argc + 1;
     char **real_argv = malloc_h(sizeof(char *) * (real_argc), &current_active_task->user_heap);
 
-    char* file_name_arg = malloc_h(sizeof(char) * strlen(filename), &current_active_task->user_heap);
+    char *file_name_arg = malloc_h(sizeof(char) * strlen(filename), &current_active_task->user_heap);
     strcpy(file_name_arg, filename);
     real_argv[0] = file_name_arg;
 
@@ -119,13 +121,13 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
     {
         size_t currnt_arg_len = strlen(argv[i]);
 
-        char * current_arg = malloc_h(sizeof(char) * currnt_arg_len, &current_active_task->user_heap);
+        char *current_arg = malloc_h(sizeof(char) * currnt_arg_len, &current_active_task->user_heap);
         strcpy(current_arg, argv[i]);
 
         real_argv[i] = current_arg;
     }
 
-    enter_user_space_program(entry_point,real_argc, real_argv, USER_STACK_TOP);
+    enter_user_space_program(entry_point, real_argc, real_argv, USER_STACK_TOP);
 
     return -1; // BAD SHIT ABOARD ( we shouldn't return to here )
 }

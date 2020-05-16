@@ -137,14 +137,12 @@ static void idt_set_gate(uint8_t index, uint32_t base, uint16_t selector, uint8_
     idt_entries[index].selector = selector;
     idt_entries[index].zero = 0;
 
-    idt_entries[index].type_attr = 0b0110;
-
 
     idt_entries[index].type_attr = 0b1110; // set to 32bit interrupt gate
     
-    idt_entries[index].type_attr = ((ring & 0b11) << 5) | idt_entries[index].type_attr; //set ring
+    idt_entries[index].type_attr |= (ring & 0b11) << 5; //set ring
 
     if(is_present) {
-        idt_entries[index].type_attr = (0b1 << 7) | idt_entries[index].type_attr;
+        idt_entries[index].type_attr |= (0b1 << 7);
     }
 }

@@ -83,19 +83,7 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 
 	register_disk(ram_disk);
 
-	char *buff = malloc(sizeof(char) * 10);
-
-	ram_disk->read(buff, 0, 10, ram_disk);
-
-	printf("disk buffer is %s \n", buff);
-
-	free(buff);
-
 	init_vfs();
-
-	task_t *new_task = create_task(test_heap);
-
-	wait_for_task_to_exit(new_task);
 
 	filesystem_t *test_fs = create_ustar_fs("test fs");
 
@@ -103,26 +91,36 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	{
 		ram_disk->fs = test_fs;
 		mount_disk(ram_disk, "a");
-		char file_value[200] = {0};
-		char file_name[200] = {0};
-
-		dir_entry_t dir_entry;
-		file_stats_t stats;
-
-		char *test = "a:";
-		readdir_vfs(test, &dir_entry, 0);
-		strcpy(file_name, test);
-		strcpy(strchr(file_name, ':') + 1, dir_entry.filename);
-		read_vfs(file_name, file_value, 0, 200);
-		stats_vfs(file_name, &stats);
-		printf("dir entry is: %s \nAt size: %d \nAnd the file contet is: %s ", dir_entry.filename, stats.size, file_value);
-
-		exec("a:hello", 0, NULL);
 	}
+
+	task_t *new_task = create_task(test_heap);
+
+	wait_for_task_to_exit(new_task);
+
+	create_task(start_shell);
 
 	kprint("halt...\n");
 
 	exit_task_function();
+}
+
+void start_shell()
+{
+	char file_value[200] = {0};
+	char file_name[200] = {0};
+
+	dir_entry_t dir_entry;
+	file_stats_t stats;
+
+	char *test = "a:";
+	readdir_vfs(test, &dir_entry, 0);
+	strcpy(file_name, test);
+	strcpy(strchr(file_name, ':') + 1, dir_entry.filename);
+	read_vfs(file_name, file_value, 0, 200);
+	stats_vfs(file_name, &stats);
+	printf("dir entry is: %s \nAt size: %d \nAnd the file contet is: %s \n", dir_entry.filename, stats.size, file_value);
+
+	exec("a:hello", 0, NULL);
 }
 
 void test_heap()
