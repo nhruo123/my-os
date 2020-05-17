@@ -8,7 +8,7 @@
 
 #define SYSCALL_COUNT 6
 
-static void syscall_handler(registers_t regs);
+static void syscall_handler(registers_t* regs);
 void init_syscalls();
 
 

@@ -14,7 +14,7 @@ static size_t buffer_index = 0;
 static semaphore_t *keyboard_lock;
 static task_list_t *waiting_for_keyboard;
 
-static void keyboard_call(registers_t regs)
+static void keyboard_call(registers_t *regs)
 {
     unsigned char scan_code = inb(0x60);
 

@@ -25,7 +25,7 @@ void init_timer()
     outb(0x40, h);
 }
 
-void timer_interrupt_handler(registers_t regs)
+void timer_interrupt_handler(registers_t* regs)
 {
     lock_kernel_stuff();
 

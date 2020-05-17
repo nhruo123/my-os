@@ -53,14 +53,14 @@ void init_syscalls()
     register_interrupt_handler(0x80, syscall_handler);
 }
 
-static void syscall_handler(registers_t regs)
+static void syscall_handler(registers_t *regs)
 {
-    if (regs.eax >= SYSCALL_COUNT)
+    if (regs->eax >= SYSCALL_COUNT)
     {
         return;
     }
 
-    void *handler_location = syscalls[regs.eax];
+    void *handler_location = syscalls[regs->eax];
 
     uint32_t ret_value;
     asm volatile(" \
@@ -77,7 +77,7 @@ static void syscall_handler(registers_t regs)
      pop %%ebx; \
    "
                  : "=a"(ret_value)
-                 : "r"(regs.edi), "r"(regs.esi), "r"(regs.edx), "r"(regs.ecx), "r"(regs.ebx), "r"(handler_location));
+                 : "r"(regs->edi), "r"(regs->esi), "r"(regs->edx), "r"(regs->ecx), "r"(regs->ebx), "r"(handler_location));
 
-    regs.eax = ret_value;
+    regs->eax = ret_value;
 }
