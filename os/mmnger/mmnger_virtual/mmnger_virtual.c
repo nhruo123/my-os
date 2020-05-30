@@ -6,6 +6,8 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
+#include <multitasking/task.h>
+
 
 void flushTLB()
 {
@@ -77,8 +79,12 @@ bool vmmngr_test_is_page_mapped(void *virtualaddr)
 
 void vmmngr_alloc_page(void *virtualaddr, void *physaddr, uint16_t flags)
 {
+
+    lock_kernel_stuff();
+
     if (vmmngr_test_is_page_mapped(virtualaddr))
     {
+        unlock_kernel_stuff();
         return;
     }
 
@@ -96,18 +102,23 @@ void vmmngr_alloc_page(void *virtualaddr, void *physaddr, uint16_t flags)
     page_table[pt_index].flags = flags;
 
     flushTLB();
+    unlock_kernel_stuff();
 }
 
 bool vmmngr_alloc_page_table(uint32_t page_table_index, uint16_t flags)
 {   
+    lock_kernel_stuff();
     uint32_t free_address = (uint32_t)pmmngr_alloc_page();
     if(free_address == NULL) {
+        unlock_kernel_stuff();
         return false;
     }
     current_page_dir[page_table_index].flags = flags;
     current_page_dir[page_table_index].physical_address =  free_address >> 12;
 
     flushTLB();
+
+    unlock_kernel_stuff();
 
     return true;
 }
@@ -124,8 +135,10 @@ void vmmngr_alloc_page_and_phys(void *virtualaddr, uint16_t flags)
 
 void vmmngr_free_page(void *virtualaddr)
 {
+    lock_kernel_stuff();
     if (!vmmngr_test_is_page_mapped(virtualaddr))
     {
+        unlock_kernel_stuff();
         return;
     }
 
@@ -136,6 +149,7 @@ void vmmngr_free_page(void *virtualaddr)
 
     page_table_to_free[pt_index].flags &= (~PRESENT_PAGE);
     flushTLB();
+    unlock_kernel_stuff();
 }
 
 void vmmngr_free_page_and_phys(void *virtualaddr)

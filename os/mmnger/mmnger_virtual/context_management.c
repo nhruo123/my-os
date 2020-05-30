@@ -6,6 +6,8 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
+#include <multitasking/task.h>
+
 
 uint32_t kernel_start_address = NULL;
 
@@ -99,6 +101,7 @@ void init_context()
 
 page_dir_entry_t clone_page_table(size_t page_table_index)
 {
+    lock_kernel_stuff();
     page_dir_entry_t old_reserved_temp_table = current_page_dir[RESERVED_TEMP_TABLE];
 
     page_dir_entry_t dir_entry_to_copy = current_page_dir[page_table_index];
@@ -131,6 +134,7 @@ page_dir_entry_t clone_page_table(size_t page_table_index)
     current_page_dir[RESERVED_TEMP_TABLE] = old_reserved_temp_table;
     flushTLB();
 
+    unlock_kernel_stuff();
     return new_page_dir_entry;
 }
 
@@ -175,8 +179,7 @@ address_space_t create_new_address_space()
     return new_page_dir_entry;
 }
 
-
-page_dir_entry_t mount_page_dir_on_temp_dir(page_dir_entry_t dir_to_mount) {
+static page_dir_entry_t none_locking_mount_page_dir_on_temp_dir(page_dir_entry_t dir_to_mount) {
     page_dir_entry_t old_dir = current_page_dir[RESERVED_TEMP_TABLE];
     current_page_dir[RESERVED_TEMP_TABLE] = dir_to_mount;
     
@@ -184,10 +187,26 @@ page_dir_entry_t mount_page_dir_on_temp_dir(page_dir_entry_t dir_to_mount) {
     return old_dir;
 }
 
+page_dir_entry_t mount_page_dir_on_temp_dir(page_dir_entry_t dir_to_mount) {
+    lock_kernel_stuff();
+
+    page_dir_entry_t to_return = none_locking_mount_page_dir_on_temp_dir(dir_to_mount);
+
+    unlock_kernel_stuff();
+
+    return to_return;
+}
+
+
+
 page_dir_entry_t mount_address_space_on_temp_dir(address_space_t adress_space_to_mount) {
+    lock_kernel_stuff();
+
     page_dir_entry_t dummy_dir_entry;
     dummy_dir_entry.flags = KERNEL_FLAGS;
     dummy_dir_entry.physical_address = adress_space_to_mount.physical_address >> 12;
+
+    unlock_kernel_stuff();
     
-    return mount_page_dir_on_temp_dir(dummy_dir_entry);
+    return none_locking_mount_page_dir_on_temp_dir(dummy_dir_entry);
 }

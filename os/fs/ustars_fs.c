@@ -58,8 +58,7 @@ static uint32_t ustar_probe(disk_t *disk)
 {
     if (disk->read != NULL)
     {
-        char *buff = malloc(sizeof(char) * 20);
-        memset(buff, 0, sizeof(char) * 20);
+        char *buff = calloc(20, sizeof(char));
 
         disk->read(buff, 0x101, 7, disk);
 
@@ -157,8 +156,7 @@ filesystem_t *create_ustar_fs(char *name)
     size_t name_len = strlen(name);
     if (name_len <= MAX_FS_NAME_SIZE)
     {
-        filesystem_t *fs = malloc(sizeof(filesystem_t));
-        memset(fs, 0, sizeof(filesystem_t));
+        filesystem_t *fs = calloc(1, sizeof(filesystem_t));
         memcpy(fs->name, name, name_len);
 
         fs->probe = ustar_probe;

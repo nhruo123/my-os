@@ -15,10 +15,11 @@ task_t *current_active_task;
 // task_t *ready_to_run_list;
 // task_t *last_ready_to_run_task;
 
-uint32_t IRQ_disable_counter;
+uint32_t IRQ_disable_counter = 0;
 
-uint32_t postpone_task_switches_counter;
-uint32_t task_switches_postponed_flag;
+uint32_t postpone_task_switches_counter = 0;
+uint32_t task_switches_postponed_flag = 0;
+bool is_multitasking_init = false;
 
 uint32_t last_tick_counter;
 uint32_t cpu_idle_time;
@@ -97,6 +98,7 @@ task_t *pop_task_form_list(task_list_t *list)
     {
         task_t *poped_task = list->first_task;
         list->first_task = poped_task->next_task;
+        poped_task->next_task = NULL;
         if (list->first_task == NULL)
         {
             list->last_task = NULL;
@@ -116,24 +118,19 @@ task_t *peek_into_list(task_list_t *list)
 
 void init_tasking()
 {
-    postpone_task_switches_counter = 0;
-    task_switches_postponed_flag = 0;
-    IRQ_disable_counter = 0;
-
+    is_multitasking_init = true;
     last_tick_counter = 0;
     cpu_idle_time = 0;
     current_time_slice_remaining = 0;
 
-    current_active_task = malloc(sizeof(task_t));
-    memset(current_active_task, 0, sizeof(task_t));
+    current_active_task = calloc(1, sizeof(task_t));
 
     current_active_task->pid = 0;
     current_active_task->regs.address_space = get_current_address_space();
     current_active_task->status = RUNNING;
     current_active_task->millisecond_used = 0;
 
-    task_lists = malloc(sizeof(task_list_t) * (HIGHEST_GENERAL_STATUS - LOWEST_GENERAL_STATUS + 1));
-    memset(task_lists, 0, sizeof(task_list_t) * (HIGHEST_GENERAL_STATUS - LOWEST_GENERAL_STATUS + 1));
+    task_lists = calloc((HIGHEST_GENERAL_STATUS - LOWEST_GENERAL_STATUS + 1), sizeof(task_list_t));
 
     last_allocated_pid = 0;
 }
@@ -141,6 +138,10 @@ void init_tasking()
 // loock needs to called before calling this!!
 void schedule()
 {
+    if(!is_multitasking_init) {
+        return;
+    }
+
     if (postpone_task_switches_counter != 0)
     {
         task_switches_postponed_flag = 1;
@@ -281,8 +282,7 @@ void switch_task_warpper(task_t *new_task)
 
 task_t *create_task(void (*entry_point)(),uint32_t argc, ...)
 {
-    task_t *task = malloc(sizeof(task_t));
-    memset(task,0,sizeof(task_t));
+    task_t *task = calloc(1 ,sizeof(task_t));
 
     address_space_t new_address_space = create_new_address_space();
     task->regs.address_space = new_address_space;

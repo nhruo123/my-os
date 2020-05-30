@@ -27,6 +27,7 @@
 extern uint32_t IRQ_disable_counter;
 extern uint32_t postpone_task_switches_counter;
 extern uint32_t task_switches_postponed_flag;
+extern bool is_multitasking_init;
 
 typedef struct task_regs_s {
     uint32_t esp, esp0;

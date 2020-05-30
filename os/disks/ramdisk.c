@@ -8,14 +8,12 @@
 
 disk_t *create_ram_disk(char *name, uint32_t start_addr, uint32_t end_addr)
 {
-    ramdisk_priv_t *disk_priv = malloc(sizeof(ramdisk_priv_t));
-    memset(disk_priv, 0, sizeof(ramdisk_priv_t));
+    ramdisk_priv_t *disk_priv = calloc(1, sizeof(ramdisk_priv_t));
 
     disk_priv->end_addr = (void *)end_addr;
     disk_priv->start_addr = (void *)start_addr;
 
-    disk_t *new_disk = malloc(sizeof(disk_t));
-    memset(new_disk, 0, sizeof(disk_t));
+    disk_t *new_disk = calloc(1, sizeof(disk_t));
 
     memcmp(new_disk->name, name, MAX_DISK_NAME);
     

@@ -14,18 +14,6 @@
 
 heap_t *current_heap = NULL;
 
-#if defined(__is_libk)
-semaphore_t *heap_mutex = NULL;
-
-void init_heap_mutex()
-{
-    if (heap_mutex == NULL)
-    {
-        heap_mutex = create_mutex();
-    }
-}
-#endif
-
 void set_current_heap(heap_t *heap)
 {
     current_heap = heap;
@@ -123,10 +111,7 @@ heap_t *self_map_heap(heap_t heap)
 void *aligned_malloc_h(size_t size, size_t alignment, heap_t *heap)
 {
     #if defined(__is_libk)
-    if (heap_mutex != NULL)
-    {
-        acquire_mutex(heap_mutex);
-    }
+    lock_kernel_stuff();
     #endif
 
     if (alignment % 4 != 0)
@@ -147,10 +132,7 @@ void *aligned_malloc_h(size_t size, size_t alignment, heap_t *heap)
         {
             #if defined(__is_libk)
             add_page_to_heap(heap);
-            if (heap_mutex != NULL)
-            {
-                release_mutex(heap_mutex);
-            }
+            unlock_kernel_stuff();
             #endif
             return aligned_malloc_h(size, alignment, heap);
         }
@@ -191,11 +173,9 @@ void *aligned_malloc_h(size_t size, size_t alignment, heap_t *heap)
     free_node_footer->node = free_node;
 
 #if defined(__is_libk)
-    if (heap_mutex != NULL)
-    {
-        release_mutex(heap_mutex);
-    }
+    unlock_kernel_stuff();
 #endif
+    // memset((void *)free_node + sizeof(list_node_t),0, size); // TODO <--- REMOVE THIS
     return (void *)free_node + sizeof(list_node_t);
 }
 
@@ -207,10 +187,7 @@ void *malloc_h(size_t size, heap_t *heap)
 void free_h(void *ptr, heap_t *heap)
 {
     #if defined(__is_libk)
-    if (heap_mutex != NULL)
-    {
-        acquire_mutex(heap_mutex);
-    }
+    lock_kernel_stuff();
     #endif
 
     list_node_t *free_node = (list_node_t *)(ptr - sizeof(list_node_t));
@@ -221,10 +198,7 @@ void free_h(void *ptr, heap_t *heap)
     try_combine_adjacent_nodes(heap, heap->start_node);
 
     #if defined(__is_libk)
-    if (heap_mutex != NULL)
-    {
-        release_mutex(heap_mutex);
-    }
+    unlock_kernel_stuff();
     #endif
 }
 

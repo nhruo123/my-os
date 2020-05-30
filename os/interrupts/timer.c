@@ -25,43 +25,33 @@ void init_timer()
     outb(0x40, h);
 }
 
-void timer_interrupt_handler(registers_t* regs)
+void timer_interrupt_handler(registers_t *regs)
 {
     lock_kernel_stuff();
 
     millisecond_since_boot++;
+    task_list_t *tmp_sleeping_list = calloc(1, sizeof(task_list_t));
 
-    task_t *sleeping_task = pop_task_form_general_list(SLEEPING_TASK);
-
-    if (sleeping_task != NULL)
+    while (peek_into_general_list(SLEEPING_TASK) != NULL)
     {
-        task_list_t *tmp_sleeping_list = malloc(sizeof(task_list_t));
-
-        do
+        task_t* task_to_check = pop_task_form_general_list(SLEEPING_TASK);
+        if (task_to_check->sleep_expiry <= millisecond_since_boot)
         {
-            add_task_to_list(tmp_sleeping_list, sleeping_task);
-            sleeping_task = pop_task_form_general_list(SLEEPING_TASK);
-        } while (sleeping_task != NULL);
-
-        task_t *task_to_check = pop_task_form_list(tmp_sleeping_list);
-
-        do
+            unblock_task(task_to_check);
+        }
+        else
         {
-            if (task_to_check->sleep_expiry <= millisecond_since_boot)
-            {
-                unblock_task(task_to_check);
-            }
-            else
-            {
-                add_task_to_general_list(SLEEPING_TASK, task_to_check);
-            }
-
-            task_to_check = pop_task_form_list(tmp_sleeping_list);
-
-        } while (task_to_check != NULL);
-
-        free(tmp_sleeping_list);
+            add_task_to_list(tmp_sleeping_list, task_to_check);
+        }
     }
+
+    while(peek_into_list(tmp_sleeping_list) != NULL)
+    {
+        task_t* task_to_return = pop_task_form_list(tmp_sleeping_list);
+        add_task_to_general_list(SLEEPING_TASK, task_to_return);
+    }
+
+    free(tmp_sleeping_list);
 
     if (current_time_slice_remaining != ONLY_TASK_RUNNING)
     {

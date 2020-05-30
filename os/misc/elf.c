@@ -10,24 +10,26 @@
 
 uint32_t exec(char *filename, uint32_t argc, char **argv)
 {
+
     file_stats_t stats;
     void *lowest_program_location = 0;
     uint32_t program_size = 0;
 
-    if (0 != stats_vfs(filename, &stats))
+
+    Elf32_Header *header = (Elf32_Header *)EFL_FILE_LOCATION;
+
+    if ( stats_vfs(filename, &stats) != 0 )
     {
         return -1; // no file
     }
 
     // map space for the file
-    for (uint32_t page = EFL_FILE_LOCATION; page < EFL_FILE_LOCATION + stats.size; page += PAGE_SIZE)
+    for (uint32_t page = EFL_FILE_LOCATION; page <= EFL_FILE_LOCATION + stats.size; page += PAGE_SIZE)
     {
         vmmngr_alloc_page_and_phys(page, USER_FLAGS);
     }
-
-    Elf32_Header *header = (Elf32_Header *)EFL_FILE_LOCATION;
-
-    read_vfs(filename, header, 0, stats.size);
+    
+    int read_count = read_vfs(filename, (char *)header, 0, stats.size);
 
     // TODO test if elf is for current os and machin
     if (header->e_ident[0] != ELFMAG0 ||
@@ -37,7 +39,7 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
     {
         printf("invalid elf file \n");
         // free mapped space for the file
-        for (uint32_t page = EFL_FILE_LOCATION; page < EFL_FILE_LOCATION + stats.size; page += PAGE_SIZE)
+        for (uint32_t page = EFL_FILE_LOCATION; page <= EFL_FILE_LOCATION + stats.size; page += PAGE_SIZE)
         {
             vmmngr_free_page_and_phys(page);
         }
@@ -76,7 +78,7 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
 
     void *entry_point = header->e_entry;
 
-    for (uint32_t page = EFL_FILE_LOCATION; page < EFL_FILE_LOCATION + stats.size; page += PAGE_SIZE)
+    for (uint32_t page = EFL_FILE_LOCATION; page <= EFL_FILE_LOCATION + stats.size; page += PAGE_SIZE)
     {
         vmmngr_free_page_and_phys(page);
     }

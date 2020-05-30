@@ -63,9 +63,17 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	heap_t *kernel_heap = self_map_heap(kernel_heap_def);
 	set_current_heap(kernel_heap);
 
+	kprint("new heap is slef mapped\n");
+
 	pmmngr_change_heap();
-	init_heap_mutex();
+	kprint("old heap is copyed\n");
+	
+	kprint("heap mutex is up\n");
+
+	kprint("init multitasking...\n");
 	init_tasking();
+	kprint("multitasking is up!\n");
+
 	init_timer();
 
 	init_keyboard();
@@ -77,25 +85,47 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 	// }
 	// putchar('\n');
 
+	kprint("init_disks...\n");
 	init_disks();
+	kprint("disks up!\n");
 
+	kprint("creating ram disk...\n");
 	disk_t *ram_disk = create_ram_disk_form_mbt("initrd", "initrd", mbt);
+	kprint("ram disk up!\n");
 
+	kprint("registering ram disk...\n");
 	register_disk(ram_disk);
+	kprint("ram disk is registered!\n");
 
+	kprint("init vfs....\n");
 	init_vfs();
+	kprint("vfs up!\n");
 
+	kprint("creating ustarfs...\n");
 	filesystem_t *test_fs = create_ustar_fs("test fs");
+	kprint("ustarfs up!\n");
 
 	if (test_fs->probe(ram_disk) == 0)
 	{
+		kprint("ram_disk is a ustart fs type!\n");
 		ram_disk->fs = test_fs;
 		mount_disk(ram_disk, "a");
+	} else
+	{
+		kprint("ram_disk is NOT a ustart fs type!\n");
 	}
+
+	kprint("starting heap test task... \n");
 
 	task_t *new_task = create_task(test_heap, 0);
 
+	kprint("wating for heap test taks... \n");
+
 	wait_for_task_to_exit(new_task);
+
+	kprint("heap test is over.\n");
+
+	kprint("starting a:hello....\n");
 
 	create_task(start_shell, 1, "a:hello");
 
@@ -112,21 +142,28 @@ void start_shell(char * shell_name)
 	dir_entry_t dir_entry;
 	file_stats_t stats;
 
+	clear_screen();
 	char *test = "a:";
-	readdir_vfs(test, &dir_entry, 0);
-	strcpy(file_name, test);
-	strcpy(strchr(file_name, ':') + 1, dir_entry.filename);
-	read_vfs(file_name, file_value, 0, 200);
-	stats_vfs(file_name, &stats);
-	printf("dir entry is: %s \nAt size: %d \nAnd the file contet is: %s \n", dir_entry.filename, stats.size, file_value);
-
+	size_t file_index = 0;
+	while (readdir_vfs(test, &dir_entry, file_index) == 1) {
+		file_index++;
+		strcpy(file_name, test);
+		strcpy(strchr(file_name, ':') + 1, dir_entry.filename);
+		read_vfs(file_name, file_value, 0, 200);
+		stats_vfs(file_name, &stats);
+		printf("dir entry is: %s \nAt size: %d \nAnd the file contet is: %s \n\n", dir_entry.filename, stats.size, file_value);
+	}
+	
 	exec(shell_name, 0, NULL);
 }
 
 void test_heap()
 {
+	kprint("heap test started entring sleep...\n");
 	milli_sleep(500);
+	kprint("back form sleep\n");
 	clear_screen();
+
 	print_heap(get_current_heap());
 
 	void *ptr1 = malloc(1);

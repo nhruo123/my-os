@@ -30,7 +30,6 @@ void abort(void);
 
 
 heap_t * self_map_heap(heap_t heap);
-void init_heap_mutex();
 void* malloc_h (size_t size, heap_t * heap);
 void *aligned_malloc_h(size_t size, size_t alignment, heap_t *heap);
 void free_h (void* ptr, heap_t * heap);
@@ -41,6 +40,9 @@ heap_t * get_current_heap();
 void* malloc (size_t size);
 void *aligned_malloc(size_t size, size_t alignment);
 void free (void* ptr);
+
+void* calloc (size_t num, size_t size);
+
 
 char* itoa ( int value, char * str, int base );
 char* utoa ( unsigned int value, char * str, int base );

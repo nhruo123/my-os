@@ -124,8 +124,7 @@ static char translate_scan_code_to_assci(char code)
 
 void init_keyboard()
 {
-    waiting_for_keyboard = malloc(sizeof(task_list_t));
-    memset(waiting_for_keyboard, 0, sizeof(task_list_t));
+    waiting_for_keyboard = calloc(1, sizeof(task_list_t));
     keyboard_lock = create_mutex();
 
     register_interrupt_handler(33, &keyboard_call);

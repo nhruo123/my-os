@@ -10,8 +10,7 @@ uint32_t last_disk_id;
 void init_disks()
 {
     last_disk_id = 0;
-    disks = malloc(MAX_DISKS * sizeof(disk_t *));
-    memset(disks, 0, MAX_DISKS * sizeof(disk_t *));
+    disks = calloc(MAX_DISKS, sizeof(disk_t *));
 }
 
 uint32_t register_disk(disk_t *disk)

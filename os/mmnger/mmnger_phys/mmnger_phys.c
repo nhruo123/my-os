@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <multiboot.h>
+#include <multitasking/task.h>
+
 
 //! size of physical memory
 static uint32_t _mmngr_memory_size = 0;
@@ -210,10 +212,11 @@ void pmmngr_init(multiboot_info_t *mbt)
 
 void *pmmngr_alloc_pages(size_t pages)
 {
-
+	lock_kernel_stuff();
 	int page_bit = mmap_get_first_free_pages_bit(pages);
 	if (page_bit == 0)
 	{
+		unlock_kernel_stuff();
 		return OUT_OF_MEMORY; //out of memory
 	}
 
@@ -221,7 +224,8 @@ void *pmmngr_alloc_pages(size_t pages)
 	{
 		mmap_set_bit(page_bit + i);
 	}
-
+	
+	unlock_kernel_stuff();
 	return mmap_bit_to_address(page_bit);
 }
 
@@ -232,11 +236,13 @@ void *pmmngr_alloc_page()
 
 void pmmngr_free_pages(void *addr, size_t pages)
 {
-
+	lock_kernel_stuff();
 	for (int i = 0; i < pages; i++)
 	{
 		mmap_unset_bit(mmap_adress_to_bit(((uint32_t)addr) + (i * PAGE_SIZE)));
 	}
+
+	unlock_kernel_stuff();
 }
 
 void pmmngr_free_page(void *addr)

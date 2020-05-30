@@ -7,6 +7,7 @@
 
 #define OUT_OF_MEMORY NULL
 
+
 void pmmngr_init(multiboot_info_t *mbt);
 
 void pmmngr_change_heap();

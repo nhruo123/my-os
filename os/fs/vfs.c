@@ -164,8 +164,7 @@ uint32_t mount_disk(disk_t *disk, char *location)
         return -1;
     }
 
-    mount_point_t *new_mout = malloc(sizeof(mount_point_t));
-    memset(new_mout, 0, sizeof(mount_point_t));
+    mount_point_t *new_mout = calloc(1, sizeof(mount_point_t));
 
     new_mout->disk = disk;
     memcpy(new_mout->location, location, MAX_MOUNT_SIZE);
@@ -211,5 +210,5 @@ uint32_t count_mounts()
 void init_vfs()
 {
     next_mount_id = 0;
-    mounts = malloc(sizeof(mount_point_t *) * MAX_MOUNTS);
+    mounts = calloc(MAX_MOUNTS, sizeof(mount_point_t *));
 }

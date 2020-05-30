@@ -6,7 +6,7 @@
 #include <fs/vfs.h>
 
 #define ELF_NIDENT	        16
-#define EFL_FILE_LOCATION   0x30000000
+#define EFL_FILE_LOCATION   0x20000000
 # define ELFMAG0	        0x7F // e_ident[EI_MAG0]
 # define ELFMAG1	        'E'  // e_ident[EI_MAG1]
 # define ELFMAG2	        'L'  // e_ident[EI_MAG2]
