@@ -150,7 +150,11 @@ address_space_t create_new_address_space()
     current_page_dir[RESERVED_TEMP_TABLE].flags = KERNEL_FLAGS;
     flushTLB();
 
+
     page_directory_t new_page_dir = (page_directory_t)get_page_address_from_indexes(LOOP_BACK_TABLE, RESERVED_TEMP_TABLE);
+
+    // set new page dir with 0 cuz real memroy is random 
+    memset(new_page_dir, 0x0, PAGE_SIZE);
 
     // copy all page tables beside the loopback
     for (size_t table_index = kernel_start_address >> 22; table_index < (MAX_ADDRES >> 22); table_index++)

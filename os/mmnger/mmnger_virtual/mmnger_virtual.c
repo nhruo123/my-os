@@ -84,6 +84,7 @@ void vmmngr_alloc_page(void *virtualaddr, void *physaddr, uint16_t flags)
 
     if (vmmngr_test_is_page_mapped(virtualaddr))
     {
+        pmmngr_free_page(physaddr);
         unlock_kernel_stuff();
         return;
     }

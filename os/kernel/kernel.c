@@ -40,6 +40,7 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 
 	clear_screen();
 
+
 	// init interrupts
 	kprint("Starting init idt....\n");
 
@@ -142,7 +143,7 @@ void start_shell(char * shell_name)
 	dir_entry_t dir_entry;
 	file_stats_t stats;
 
-	clear_screen();
+	// clear_screen();
 	char *test = "a:";
 	size_t file_index = 0;
 	while (readdir_vfs(test, &dir_entry, file_index) == 1) {
@@ -153,7 +154,7 @@ void start_shell(char * shell_name)
 		stats_vfs(file_name, &stats);
 		printf("dir entry is: %s \nAt size: %d \nAnd the file contet is: %s \n\n", dir_entry.filename, stats.size, file_value);
 	}
-	
+
 	exec(shell_name, 0, NULL);
 }
 

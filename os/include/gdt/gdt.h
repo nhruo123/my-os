@@ -41,6 +41,6 @@ typedef struct gdt_pointer_s gdt_pointer_t;
 void init_gdt();
 static void gdt_set_entry(uint32_t index, uint32_t base, uint32_t limit, uint8_t access_byte , uint8_t flags);
 extern void flush_gdt(gdt_pointer_t *gdt_ptr);
-
+void set_kernel_esp(uint32_t esp);
 
 #endif

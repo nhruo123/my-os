@@ -28,6 +28,7 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
     {
         vmmngr_alloc_page_and_phys(page, USER_FLAGS);
     }
+
     
     int read_count = read_vfs(filename, (char *)header, 0, stats.size);
 

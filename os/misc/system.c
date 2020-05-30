@@ -7,6 +7,10 @@
 void enter_user_space_program(void *entry_point, int argc, char **argv, void *stack_top)
 {
     asm volatile("cli");
+    uint32_t esp;
+    asm("mov %%esp, %0": "=r"(esp));
+
+    set_kernel_esp(esp);
 
     asm volatile(
         "movl %3, %%esp\n" // set stack
