@@ -146,8 +146,8 @@ address_space_t create_new_address_space()
 
     new_page_dir_entry.physical_address = (uint32_t)pmmngr_alloc_page();
 
-    current_page_dir[RESERVED_TEMP_TABLE].physical_address = new_page_dir_entry.physical_address >> 12;
     current_page_dir[RESERVED_TEMP_TABLE].flags = KERNEL_FLAGS;
+    current_page_dir[RESERVED_TEMP_TABLE].physical_address = new_page_dir_entry.physical_address >> 12;
     flushTLB();
 
 
@@ -167,8 +167,9 @@ address_space_t create_new_address_space()
     }
 
     // change loop back map for new page dir
-    new_page_dir[LOOP_BACK_TABLE].physical_address = new_page_dir_entry.physical_address >> 12;
     new_page_dir[LOOP_BACK_TABLE].flags = KERNEL_FLAGS;
+    new_page_dir[LOOP_BACK_TABLE].physical_address = new_page_dir_entry.physical_address >> 12;
+    
 
     // // TODO REMOVE THIS AND MANGAGE VGA
     // size_t vga_index = get_page_directory_index(0xB8000);

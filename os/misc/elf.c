@@ -15,10 +15,9 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
     void *lowest_program_location = 0;
     uint32_t program_size = 0;
 
-
     Elf32_Header *header = (Elf32_Header *)EFL_FILE_LOCATION;
 
-    if ( stats_vfs(filename, &stats) != 0 )
+    if (stats_vfs(filename, &stats) != 0)
     {
         return -1; // no file
     }
@@ -26,10 +25,10 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
     // map space for the file
     for (uint32_t page = EFL_FILE_LOCATION; page <= EFL_FILE_LOCATION + stats.size; page += PAGE_SIZE)
     {
+        vmmngr_free_page_and_phys(page); // TODO REMOVE THIS LINE THIS IS A TEMP FIX
         vmmngr_alloc_page_and_phys(page, USER_FLAGS);
     }
 
-    
     int read_count = read_vfs(filename, (char *)header, 0, stats.size);
 
     // TODO test if elf is for current os and machin
@@ -47,10 +46,12 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
         return -1;
     }
 
-    for (uint32_t i = 0; i < header->e_shentsize * header->e_shnum; i += header->e_shentsize)
+    // printf("started parsing headers at 0x%x, and there are %d headers\n", ((void *)header + header->e_shoff), header->e_shnum);
+    for (uint32_t i = 0; i < (header->e_shentsize * header->e_shnum); i += header->e_shentsize)
     {
 
         Elf32_Shdr *header_entry = (Elf32_Shdr *)((void *)header + (header->e_shoff + i));
+        // printf("%d)header_entry(0x%x) = { sh_name = 0x%x, sh_type = 0x%x, sh_addr = 0x%x, sh_offset = 0x%x, sh_size = 0x%x } \n", i, ((void *)header + (header->e_shoff + i)), header_entry->sh_name, header_entry->sh_type, header_entry->sh_addr, header_entry->sh_offset, header_entry->sh_size);
 
         if (header_entry->sh_addr < (uint32_t)lowest_program_location)
         {
@@ -64,6 +65,7 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
 
         for (size_t page = 0; page < header_entry->sh_size; page += PAGE_SIZE)
         {
+            vmmngr_free_page_and_phys(page); // TODO REMOVE THIS LINE THIS IS A TEMP FIX
             vmmngr_alloc_page_and_phys(header_entry->sh_addr + page, USER_FLAGS);
         }
 
@@ -87,6 +89,7 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
     // allocat a stack for the new procces
     for (uint32_t page = USER_STACK_BOTTOM; page <= USER_STACK_TOP; page += PAGE_SIZE)
     {
+        vmmngr_free_page_and_phys(page); // TODO REMOVE THIS LINE THIS IS A TEMP FIX
         vmmngr_alloc_page_and_phys(page, USER_FLAGS);
     }
 
@@ -106,6 +109,7 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
 
     for (size_t page = current_active_task->user_heap.start_address; page <= current_active_task->user_heap.end_address; page += PAGE_SIZE)
     {
+        vmmngr_free_page_and_phys(page); // TODO REMOVE THIS LINE THIS IS A TEMP FIX
         vmmngr_alloc_page_and_phys(page, USER_FLAGS);
     }
 
@@ -130,7 +134,13 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
         real_argv[i] = current_arg;
     }
 
+    uint32_t start_data;
+    memcpy(&start_data, entry_point, 4);
+
     enter_user_space_program(entry_point, real_argc, real_argv, USER_STACK_TOP);
+
+    // printf("WE ARE AFTER ENTER USER SPACE!!\n");
+    // abort();
 
     return -1; // BAD SHIT ABOARD ( we shouldn't return to here )
 }

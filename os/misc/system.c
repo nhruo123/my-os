@@ -8,7 +8,7 @@ void enter_user_space_program(void *entry_point, int argc, char **argv, void *st
 {
     asm volatile("cli");
     uint32_t esp;
-    asm("mov %%esp, %0": "=r"(esp));
+    asm volatile("mov %%esp, %0": "=r"(esp));
 
     set_kernel_esp(esp);
 
@@ -31,6 +31,6 @@ void enter_user_space_program(void *entry_point, int argc, char **argv, void *st
         "pushl $0x1B\n" // push user code segment for iret
         "pushl %0\n"    // push entry point for irete (eip) 
         "iret\n"        // make cpu think we return from an interrupt in order to enter uesr space
-        : : "m"(entry_point), "r"(argc), "r"(argv), "r"(stack_top) : "%ax", "%esp", "%eax"
+        : : "r"(entry_point), "r"(argc), "r"(argv), "r"(stack_top) : "%ax", "%esp", "%eax"
     );
 }

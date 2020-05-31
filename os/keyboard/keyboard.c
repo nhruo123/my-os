@@ -137,11 +137,16 @@ char get_char()
     if (buffer_index == 0)
     {
         add_task_to_list(waiting_for_keyboard, current_active_task);
+        release_mutex(keyboard_lock);
+        
         block_current_task(WAITING_FOR_HARDWARE);
+
+        acquire_mutex(keyboard_lock);
     }
 
     buffer_index--;
     char_to_return = char_keyboard_buffer[buffer_index];
+
     
 
     release_mutex(keyboard_lock);

@@ -55,6 +55,7 @@ void init_syscalls()
 
 static void syscall_handler(registers_t *regs)
 {
+
     if (regs->eax >= SYSCALL_COUNT)
     {
         return;

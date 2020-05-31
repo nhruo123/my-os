@@ -114,9 +114,13 @@ bool vmmngr_alloc_page_table(uint32_t page_table_index, uint16_t flags)
         unlock_kernel_stuff();
         return false;
     }
-    current_page_dir[page_table_index].flags = flags;
+    
     current_page_dir[page_table_index].physical_address =  free_address >> 12;
-
+    current_page_dir[page_table_index].flags = flags;
+    
+    void * new_page_table_adder = get_page_address_from_indexes(LOOP_BACK_TABLE, page_table_index);
+    memset(new_page_table_adder, 0, PAGE_SIZE);
+    
     flushTLB();
 
     unlock_kernel_stuff();
@@ -155,6 +159,8 @@ void vmmngr_free_page(void *virtualaddr)
 
 void vmmngr_free_page_and_phys(void *virtualaddr)
 {
-    pmmngr_free_page(get_physaddr(virtualaddr));
-    vmmngr_free_page(virtualaddr);
+    if(get_physaddr(virtualaddr) != NULL) {
+        pmmngr_free_page(get_physaddr(virtualaddr));
+        vmmngr_free_page(virtualaddr);
+    }
 }
