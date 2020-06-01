@@ -8,12 +8,11 @@
 #include <limits.h>
 #include <stdarg.h>
 
+task_t **global_tasks_list;
+
 task_list_t *task_lists;
 
 task_t *current_active_task;
-
-// task_t *ready_to_run_list;
-// task_t *last_ready_to_run_task;
 
 uint32_t IRQ_disable_counter = 0;
 
@@ -24,7 +23,7 @@ bool is_multitasking_init = false;
 uint32_t last_tick_counter;
 uint32_t cpu_idle_time;
 uint32_t current_time_slice_remaining;
-uint32_t last_allocated_pid;
+uint32_t next_pid;
 
 void exit_task_function()
 {
@@ -118,6 +117,9 @@ task_t *peek_into_list(task_list_t *list)
 
 void init_tasking()
 {
+    global_tasks_list = calloc(MAX_PID, sizeof(task_t));
+    next_pid = 1;
+
     is_multitasking_init = true;
     last_tick_counter = 0;
     cpu_idle_time = 0;
@@ -132,13 +134,14 @@ void init_tasking()
 
     task_lists = calloc((HIGHEST_GENERAL_STATUS - LOWEST_GENERAL_STATUS + 1), sizeof(task_list_t));
 
-    last_allocated_pid = 0;
+    global_tasks_list[0] = current_active_task;
 }
 
 // loock needs to called before calling this!!
 void schedule()
 {
-    if(!is_multitasking_init) {
+    if (!is_multitasking_init)
+    {
         return;
     }
 
@@ -215,8 +218,10 @@ void wait_for_task_to_exit(task_t *task)
 {
     lock_kernel_stuff();
 
-    add_task_to_list(&task->tasks_wating_for_exit, current_active_task);
-    block_current_task(WAITING_FOR_TASK_EXIT);
+    if(task->status != TERMINATED_TASK) {
+        add_task_to_list(&task->tasks_wating_for_exit, current_active_task);
+        block_current_task(WAITING_FOR_TASK_EXIT);
+    }
 
     unlock_kernel_stuff();
 }
@@ -280,9 +285,17 @@ void switch_task_warpper(task_t *new_task)
     switch_task(new_task);
 }
 
-task_t *create_task(void (*entry_point)(),uint32_t argc, ...)
+static task_t *create_empty_task()
 {
-    task_t *task = calloc(1 ,sizeof(task_t));
+    lock_kernel_stuff();
+
+    if (next_pid >= MAX_PID)
+    {
+        printf("RAN OUT OF  PIDS!!!\n");
+        abort();
+    }
+
+    task_t *task = calloc(1, sizeof(task_t));
 
     address_space_t new_address_space = create_new_address_space();
     task->regs.address_space = new_address_space;
@@ -290,10 +303,20 @@ task_t *create_task(void (*entry_point)(),uint32_t argc, ...)
     task->status = READY_TO_RUN;
     task->next_task = NULL;
     task->millisecond_used = 0;
-    last_allocated_pid++;
-    task->pid = last_allocated_pid;
-    
-    page_dir_entry_t old_dir = mount_address_space_on_temp_dir(new_address_space);
+    task->pid = next_pid;
+
+    global_tasks_list[next_pid] = task;
+
+    next_pid++;
+
+    unlock_kernel_stuff();
+    return task;
+}
+
+task_t *create_task(void (*entry_point)(), uint32_t argc, ...)
+{
+    task_t *task = create_empty_task();
+    page_dir_entry_t old_dir = mount_address_space_on_temp_dir(task->regs.address_space);
 
     page_dir_entry_t new_stack_page_dir = *((page_dir_entry_t *)&reserved_temp_table[STACK_TABLE]);
     // now resrved temp table is the new address space stack (we dont need output cuz its old_dir)
@@ -306,8 +329,9 @@ task_t *create_task(void (*entry_point)(),uint32_t argc, ...)
     va_list parameters;
     va_start(parameters, argc);
 
-    for(size_t index = 0; index < argc; index++) {
-        uint32_t current_arg = va_arg(parameters,uint32_t);
+    for (size_t index = 0; index < argc; index++)
+    {
+        uint32_t current_arg = va_arg(parameters, uint32_t);
         top_of_new_stack = push_to_other_stack(current_arg, top_of_new_stack);
     }
 
@@ -315,7 +339,6 @@ task_t *create_task(void (*entry_point)(),uint32_t argc, ...)
 
     top_of_new_stack = push_to_other_stack((uint32_t)exit_task_function, top_of_new_stack); // push exit func location
 
-    
     top_of_new_stack = push_to_other_stack((uint32_t)entry_point, top_of_new_stack); // push entry point
 
     top_of_new_stack = push_to_other_stack((uint32_t)start_task_function, top_of_new_stack); // start func location
@@ -349,5 +372,60 @@ void update_time_used()
     else
     {
         current_active_task->millisecond_used += elapsed;
+    }
+}
+
+uint32_t fork()
+{
+    lock_kernel_stuff();
+    task_t *new_task = create_empty_task();
+
+    new_task->user_stack_top = current_active_task->user_stack_top;
+    new_task->regs.esp0 = current_active_task->regs.esp0;
+    new_task->user_heap = current_active_task->user_heap;
+
+    address_space_t new_adder_space = new_task->regs.address_space;
+    page_dir_entry_t old_reserved_temp_table = mount_address_space_on_temp_dir(new_adder_space);
+
+    page_directory_t page_dir = (page_directory_t)get_page_address_from_indexes(LOOP_BACK_TABLE, RESERVED_TEMP_TABLE);
+
+    for (size_t page_table_index = 0; (page_table_index * PAGE_SIZE * PAGE_SIZE) < KERNEL_SPACE; page_table_index++)
+    {
+        // we set the new addres space to the cloned page table
+        page_dir_entry_t new_page_table = clone_page_table(page_table_index);
+        page_dir[page_table_index] = new_page_table;
+    }
+
+    uint32_t ebp;
+    asm volatile("mov %%ebp, %0": "=r"(ebp));
+    
+    mount_page_dir_on_temp_dir(page_dir[STACK_TABLE]);
+    void *top_of_new_stack = (void *)get_page_address_from_indexes(RESERVED_TEMP_TABLE, 0);
+    top_of_new_stack = ((uint32_t)top_of_new_stack & 0xFFC00000) | ((ebp + 0x4) & 0x3FFFFF);
+    
+    top_of_new_stack = push_to_other_stack(0, top_of_new_stack);         // start func parameter
+    top_of_new_stack = push_to_other_stack((uint32_t)fork_wrapper, top_of_new_stack); // start func location
+    
+    top_of_new_stack = push_to_other_stack(0, top_of_new_stack);         // start func location ebx
+    top_of_new_stack = push_to_other_stack(0, top_of_new_stack);         // start func location esi
+    top_of_new_stack = push_to_other_stack(0, top_of_new_stack);         // start func location edi
+    top_of_new_stack = push_to_other_stack(*(uint32_t *)ebp, top_of_new_stack); // start func location ebp
+
+    new_task->regs.esp  = (get_page_address_from_indexes(STACK_TABLE,0) & 0xFFC00000) | ((uint32_t)top_of_new_stack & 0x3FFFFF);
+
+    mount_page_dir_on_temp_dir(old_reserved_temp_table);
+
+    add_task_to_general_list(READY_TO_RUN, new_task);
+
+    unlock_kernel_stuff();
+
+    return new_task->pid;
+}
+
+void wait_task_exit_pid(uint32_t pid)
+{
+    if(pid < MAX_PID && global_tasks_list[pid] != NULL && global_tasks_list[pid]->status != TERMINATED_TASK)
+    {
+        wait_for_task_to_exit(global_tasks_list[pid]);
     }
 }

@@ -118,21 +118,34 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 
 	kprint("starting heap test task... \n");
 
-	task_t *new_task = create_task(test_heap, 0);
+	create_task(test_fork,0);
 
-	kprint("wating for heap test taks... \n");
+	// task_t *new_task = create_task(test_heap, 0);
 
-	wait_for_task_to_exit(new_task);
+	// kprint("wating for heap test taks... \n");
 
-	kprint("heap test is over.\n");
+	// wait_for_task_to_exit(new_task);
 
-	kprint("starting a:hello....\n");
+	// kprint("heap test is over.\n");
 
-	create_task(start_shell, 1, "a:hello");
+	// kprint("starting a:hello....\n");
 
-	kprint("halt...\n");
+	// create_task(start_shell, 1, "a:hello");
+
+	// kprint("halt...\n");
 
 	exit_task_function();
+}
+
+void test_fork()
+{
+	printf("before fork...\n");
+	uint32_t new_pid = fork();
+	if(new_pid != 0) 
+	{
+		wait_task_exit_pid(new_pid);
+	}
+	printf("after fork! new_pid = %d\n", new_pid);
 }
 
 void start_shell(char * shell_name)

@@ -38,8 +38,9 @@ typedef struct address_space_s {
 #define STACK_TOP 0xFF7FF000
 #define STACK_BOTTOM STACK_TOP - STACK_SIZE
 
-#define USER_STACK_TOP    0x25300000
-#define USER_STACK_BOTTOM 0x25000000
+#define USER_STACK_TOP      0x25300000
+#define USER_STACK_BOTTOM   0x25000000
+#define KERNEL_SPACE        0xC0000000
 
 
 extern uint32_t kernel_start_address;
@@ -59,10 +60,7 @@ void init_context();
 page_dir_entry_t clone_page_table(size_t page_table_index);
 address_space_t create_new_address_space();
 
-static page_dir_entry_t none_locking_mount_page_dir_on_temp_dir(page_dir_entry_t dir_to_mount);
 page_dir_entry_t mount_page_dir_on_temp_dir(page_dir_entry_t dir_to_mount);
 page_dir_entry_t mount_address_space_on_temp_dir(address_space_t adress_space_to_mount);
-
-
 
 #endif

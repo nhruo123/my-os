@@ -24,6 +24,8 @@
 #define TAKS_TIME_SLICE         50 // im millisecond
 #define ONLY_TASK_RUNNING       0
 
+#define MAX_PID                 4096
+
 extern uint32_t IRQ_disable_counter;
 extern uint32_t postpone_task_switches_counter;
 extern uint32_t task_switches_postponed_flag;
@@ -107,13 +109,17 @@ void block_current_task(uint32_t reason);
 void unblock_task(task_t * task);
 
 void init_tasking();
+static task_t *create_empty_task();
 task_t *create_task(void (*entry_point)(),uint32_t argc, ...);
+uint32_t fork();
 void schedule();
 
 
 void switch_task_warpper(task_t *new_task);
 
 extern void switch_task(task_t *new_task);
+uint32_t fork_wrapper(uint32_t new_pid);
 
+void wait_task_exit_pid(uint32_t pid);
 
 #endif

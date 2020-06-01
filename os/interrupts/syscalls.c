@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <interrupts/isr.h>
 #include <mmnger/mmnger_virtual.h>
+#include <mmnger/context_management.h>
 #include <multitasking/task.h>
 #include <interrupts/syscall.h>
 #include <stdlib.h>
@@ -10,7 +11,7 @@
 
 static int allocate_page_for_user(void *loc)
 {
-    if (loc < 0X30000000)
+    if (loc < KERNEL_SPACE)
     {
         vmmngr_alloc_page_and_phys(loc, USER_FLAGS);
         return 0;
@@ -19,20 +20,15 @@ static int allocate_page_for_user(void *loc)
     return 1;
 }
 
-static void user_exec(void *loc, int argc, char** argv)
-{
-    exec(loc,argc,argv);
-}
-
 static int user_start_task(void *loc, int argc, char** argv)
 {
-    create_task(user_exec,3, loc, argc, argv);
+    create_task(exec,3, loc, argc, argv);
     return 0;
 }
 
 static int user_start_task_and_block(void *loc, int argc, char** argv)
 {
-    task_t* task = create_task(user_exec,3, loc, argc, argv);
+    task_t* task = create_task(exec,3, loc, argc, argv);
     wait_for_task_to_exit(task);
     return 0;
 }

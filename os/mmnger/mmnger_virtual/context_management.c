@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <multitasking/task.h>
 
-
 uint32_t kernel_start_address = NULL;
 
 page_directory_t current_page_dir = NULL;
@@ -45,10 +44,8 @@ void init_context()
         if (!(current_page_dir[page_table_index].flags & PRESENT_PAGE))
         {
             bool is_alloc_good = vmmngr_alloc_page_table(page_table_index, KERNEL_FLAGS);
-            
 
             memset(get_page_address_from_indexes(LOOP_BACK_TABLE, page_table_index), 0, PAGE_SIZE);
-
         }
     }
 
@@ -106,8 +103,15 @@ page_dir_entry_t clone_page_table(size_t page_table_index)
 
     page_dir_entry_t dir_entry_to_copy = current_page_dir[page_table_index];
     page_dir_entry_t new_page_dir_entry = {0};
+
     new_page_dir_entry.physical_address = (uint32_t)pmmngr_alloc_page() >> 12;
     new_page_dir_entry.flags = dir_entry_to_copy.flags;
+
+    // empty page table
+    if((new_page_dir_entry.flags & PRESENT_PAGE) == 0) {
+        unlock_kernel_stuff();
+        return new_page_dir_entry;
+    }
 
     current_page_dir[RESERVED_TEMP_TABLE] = new_page_dir_entry;
     flushTLB();
@@ -150,10 +154,9 @@ address_space_t create_new_address_space()
     current_page_dir[RESERVED_TEMP_TABLE].physical_address = new_page_dir_entry.physical_address >> 12;
     flushTLB();
 
-
     page_directory_t new_page_dir = (page_directory_t)get_page_address_from_indexes(LOOP_BACK_TABLE, RESERVED_TEMP_TABLE);
 
-    // set new page dir with 0 cuz real memroy is random 
+    // set new page dir with 0 cuz real memroy is random
     memset(new_page_dir, 0x0, PAGE_SIZE);
 
     // copy all page tables beside the loopback
@@ -169,7 +172,6 @@ address_space_t create_new_address_space()
     // change loop back map for new page dir
     new_page_dir[LOOP_BACK_TABLE].flags = KERNEL_FLAGS;
     new_page_dir[LOOP_BACK_TABLE].physical_address = new_page_dir_entry.physical_address >> 12;
-    
 
     // // TODO REMOVE THIS AND MANGAGE VGA
     // size_t vga_index = get_page_directory_index(0xB8000);
@@ -184,27 +186,22 @@ address_space_t create_new_address_space()
     return new_page_dir_entry;
 }
 
-static page_dir_entry_t none_locking_mount_page_dir_on_temp_dir(page_dir_entry_t dir_to_mount) {
+
+page_dir_entry_t mount_page_dir_on_temp_dir(page_dir_entry_t dir_to_mount)
+{
+    lock_kernel_stuff();
+
     page_dir_entry_t old_dir = current_page_dir[RESERVED_TEMP_TABLE];
     current_page_dir[RESERVED_TEMP_TABLE] = dir_to_mount;
-    
+
     flushTLB();
+
+    unlock_kernel_stuff();
     return old_dir;
 }
 
-page_dir_entry_t mount_page_dir_on_temp_dir(page_dir_entry_t dir_to_mount) {
-    lock_kernel_stuff();
-
-    page_dir_entry_t to_return = none_locking_mount_page_dir_on_temp_dir(dir_to_mount);
-
-    unlock_kernel_stuff();
-
-    return to_return;
-}
-
-
-
-page_dir_entry_t mount_address_space_on_temp_dir(address_space_t adress_space_to_mount) {
+page_dir_entry_t mount_address_space_on_temp_dir(address_space_t adress_space_to_mount)
+{
     lock_kernel_stuff();
 
     page_dir_entry_t dummy_dir_entry;
@@ -212,6 +209,6 @@ page_dir_entry_t mount_address_space_on_temp_dir(address_space_t adress_space_to
     dummy_dir_entry.physical_address = adress_space_to_mount.physical_address >> 12;
 
     unlock_kernel_stuff();
-    
-    return none_locking_mount_page_dir_on_temp_dir(dummy_dir_entry);
+
+    return mount_page_dir_on_temp_dir(dummy_dir_entry);
 }
