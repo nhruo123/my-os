@@ -396,8 +396,15 @@ uint32_t fork()
         page_dir[page_table_index] = new_page_table;
     }
 
-    uint32_t ebp;
-    asm volatile("mov %%ebp, %0": "=r"(ebp));
+    register volatile uint32_t *ebp_as_pointer asm ("ebp");
+    register volatile uint32_t ebp asm ("ebp");
+    register volatile uint32_t edi asm ("edi");
+    register volatile uint32_t esi asm ("esi");
+    register volatile uint32_t ebx asm ("ebx");
+
+    ebx = esi = edi = 1;
+
+
     
     mount_page_dir_on_temp_dir(page_dir[STACK_TABLE]);
     void *top_of_new_stack = (void *)get_page_address_from_indexes(RESERVED_TEMP_TABLE, 0);
@@ -406,10 +413,10 @@ uint32_t fork()
     top_of_new_stack = push_to_other_stack(0, top_of_new_stack);         // start func parameter
     top_of_new_stack = push_to_other_stack((uint32_t)fork_wrapper, top_of_new_stack); // start func location
     
-    top_of_new_stack = push_to_other_stack(0, top_of_new_stack);         // start func location ebx
-    top_of_new_stack = push_to_other_stack(0, top_of_new_stack);         // start func location esi
-    top_of_new_stack = push_to_other_stack(0, top_of_new_stack);         // start func location edi
-    top_of_new_stack = push_to_other_stack(*(uint32_t *)ebp, top_of_new_stack); // start func location ebp
+    top_of_new_stack = push_to_other_stack(*(ebp_as_pointer - 3), top_of_new_stack);         // start func location ebx
+    top_of_new_stack = push_to_other_stack(*(ebp_as_pointer - 2), top_of_new_stack);         // start func location esi
+    top_of_new_stack = push_to_other_stack(*(ebp_as_pointer - 1), top_of_new_stack);         // start func location edi
+    top_of_new_stack = push_to_other_stack(*ebp_as_pointer, top_of_new_stack); // start func location ebp
 
     new_task->regs.esp  = (get_page_address_from_indexes(STACK_TABLE,0) & 0xFFC00000) | ((uint32_t)top_of_new_stack & 0x3FFFFF);
 

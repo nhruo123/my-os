@@ -120,19 +120,19 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 
 	create_task(test_fork,0);
 
-	// task_t *new_task = create_task(test_heap, 0);
+	task_t *new_task = create_task(test_heap, 0);
 
-	// kprint("wating for heap test taks... \n");
+	kprint("wating for heap test taks... \n");
 
-	// wait_for_task_to_exit(new_task);
+	wait_for_task_to_exit(new_task);
 
-	// kprint("heap test is over.\n");
+	kprint("heap test is over.\n");
 
-	// kprint("starting a:hello....\n");
+	kprint("starting a:hello....\n");
 
-	// create_task(start_shell, 1, "a:hello");
+	create_task(start_shell, 1, "a:hello");
 
-	// kprint("halt...\n");
+	kprint("halt...\n");
 
 	exit_task_function();
 }
