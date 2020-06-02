@@ -4,21 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <disks/disk.h>
-
-#define MAX_FILE_NAME_SIZE  256
-#define MAX_FS_NAME_SIZE    256
-#define MAX_MOUNTS          256
-#define MAX_MOUNT_SIZE      20
-
-#define FS_FILE             0x01
-#define FS_DIRECTORY        0x02
-
-#define MOUNT_SEPARTOR      ':'
-#define FILE_SEPARTOR       '/'
-
-typedef struct dir_entry_s {
-    char filename[MAX_FILE_NAME_SIZE + 1];
-} dir_entry_t;
+#include <fs/fs_defs.h>
 
 typedef struct filesystem_s {
     char name[MAX_FILE_NAME_SIZE + 1];
@@ -37,11 +23,6 @@ typedef struct mount_point_s {
     char location[MAX_MOUNT_SIZE + 1];
     struct disk_s* disk;
 } mount_point_t ;
-
-typedef struct file_stats_s {
-    uint32_t size;
-} file_stats_t;
-
 
 
 static uint32_t split_file_name(char *name, char *mount_name, char *file_name);

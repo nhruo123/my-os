@@ -143,7 +143,7 @@ void test_fork()
 	uint32_t new_pid = fork();
 	if(new_pid != 0) 
 	{
-		wait_task_exit_pid(new_pid);
+		waitpid(new_pid);
 	}
 	printf("after fork! new_pid = %d\n", new_pid);
 }

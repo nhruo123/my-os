@@ -8,6 +8,8 @@
 #include <interrupts/syscall.h>
 #include <stdlib.h>
 #include <misc/elf.h>
+#include <misc/elf.h>
+#include <fs/vfs.h>
 
 static int allocate_page_for_user(void *loc)
 {
@@ -20,28 +22,29 @@ static int allocate_page_for_user(void *loc)
     return 1;
 }
 
-static int user_start_task(void *loc, int argc, char** argv)
-{
-    create_task(exec,3, loc, argc, argv);
-    return 0;
-}
-
-static int user_start_task_and_block(void *loc, int argc, char** argv)
-{
-    task_t* task = create_task(exec,3, loc, argc, argv);
-    wait_for_task_to_exit(task);
-    return 0;
-}
-
-
 
 static void *syscalls[SYSCALL_COUNT] = {
+    // general
     exit_task_function,
+
+    // io
     putchar,
     getchar,
+    // virtual mem
     allocate_page_for_user,
-    user_start_task,
-    user_start_task_and_block,
+
+    // multi tasking
+    fork,
+    waitpid,
+
+    // core images
+    exec,
+
+    // fs
+    mk_file_vfs,
+    readdir_vfs,
+    read_vfs,
+    write_vfs,
 };
 
 void init_syscalls()

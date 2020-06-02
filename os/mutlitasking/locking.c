@@ -47,6 +47,7 @@ void unlock_kernel_stuff()
                 schedule();
             }
         }
+        // this here serves as a unlock kernel stuff after we return form the prostponed task switch
         IRQ_disable_counter--;
         if (IRQ_disable_counter == 0)
         {

@@ -411,7 +411,7 @@ uint32_t fork()
     top_of_new_stack = ((uint32_t)top_of_new_stack & 0xFFC00000) | ((ebp + 0x4) & 0x3FFFFF);
     
     top_of_new_stack = push_to_other_stack((uint32_t)start_task_function, top_of_new_stack); // start func location
-    
+
     top_of_new_stack = push_to_other_stack(0, top_of_new_stack);         // start func parameter
     top_of_new_stack = push_to_other_stack((uint32_t)fork_wrapper, top_of_new_stack); // start func location
     
@@ -431,7 +431,7 @@ uint32_t fork()
     return new_task->pid;
 }
 
-void wait_task_exit_pid(uint32_t pid)
+void waitpid(uint32_t pid)
 {
     if(pid < MAX_PID && global_tasks_list[pid] != NULL && global_tasks_list[pid]->status != TERMINATED_TASK)
     {

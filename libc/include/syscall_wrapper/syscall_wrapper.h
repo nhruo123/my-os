@@ -1,6 +1,9 @@
 #ifndef _SYSCALL_WRAPPER_H
 #define _SYSCALL_WRAPPER_H
 
+#include <fs/fs_defs.h>
+
+
 // taken from jamesmolly guild this seems like a good macro
 
 #define DECL_SYSCALL0(fn) int sys_##fn(void);
@@ -60,14 +63,22 @@ int sys_##fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
 
 
 DECL_SYSCALL1(exit, int)
+
 DECL_SYSCALL1(put_char, char)
 DECL_SYSCALL0(get_char)
 
 DECL_SYSCALL1(map_page, void *)
 
 
-DECL_SYSCALL3(start_task, char *, int, char **)
-DECL_SYSCALL3(start_task_and_block, char *, int, char **)
+DECL_SYSCALL0(fork)
+DECL_SYSCALL1(waitpid, int)
+
+DECL_SYSCALL3(exec, char *, int, char **)
+
+DECL_SYSCALL2(mk_file, char *, int)
+DECL_SYSCALL3(readdir, char *, dir_entry_t *, int)
+DECL_SYSCALL4(read, char *,  char *, int, int)
+DECL_SYSCALL4(write, char *,  char *, int, int)
 
 
 #endif

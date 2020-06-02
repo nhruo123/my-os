@@ -120,6 +120,6 @@ void switch_task_warpper(task_t *new_task);
 extern void switch_task(task_t *new_task);
 uint32_t fork_wrapper(uint32_t new_pid);
 
-void wait_task_exit_pid(uint32_t pid);
+void waitpid(uint32_t pid);
 
 #endif
