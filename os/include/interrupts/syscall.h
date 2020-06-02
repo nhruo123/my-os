@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <interrupts/isr.h>
 
-#define SYSCALL_COUNT 7
+#define SYSCALL_COUNT 13
 
 static void syscall_handler(registers_t* regs);
 void init_syscalls();

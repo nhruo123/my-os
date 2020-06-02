@@ -18,3 +18,7 @@ DEFN_SYSCALL2(mk_file, 7, char *, int)
 DEFN_SYSCALL3(readdir, 8, char *, dir_entry_t *, int)
 DEFN_SYSCALL4(read, 9, char *,  char *, int, int)
 DEFN_SYSCALL4(write, 10, char *,  char *, int, int)
+DEFN_SYSCALL2(stats, 11, char *, file_stats_t *)
+
+
+DEFN_SYSCALL0(heap_loc, 12)

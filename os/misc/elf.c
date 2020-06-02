@@ -46,6 +46,14 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
         return -1;
     }
 
+    //save argc for later
+    char **tmp_argv = calloc(argc, sizeof(char*));
+    for(size_t i = 0; i < argc ; i++)
+    {
+        tmp_argv[i] = malloc(strlen(argv[i]) + 1);
+        strcpy(tmp_argv[i], argv[i]);
+    }
+
     // printf("started parsing headers at 0x%x, and there are %d headers\n", ((void *)header + header->e_shoff), header->e_shnum);
     for (uint32_t i = 0; i < (header->e_shentsize * header->e_shnum); i += header->e_shentsize)
     {
@@ -99,43 +107,52 @@ uint32_t exec(char *filename, uint32_t argc, char **argv)
         heap_start += PAGE_SIZE - (heap_start % PAGE_SIZE);
     }
 
+    heap_t user_heap = {0};
+
     current_active_task->user_stack_top = USER_STACK_TOP;
 
-    current_active_task->user_heap.is_heap_static = true;
-    current_active_task->user_heap.is_read_only = false;
-    current_active_task->user_heap.start_address = (void *)heap_start;
-    current_active_task->user_heap.end_address = ((void *)heap_start + PAGE_SIZE * 2);
-    current_active_task->user_heap.max_end_address = current_active_task->user_heap.end_address;
+    user_heap.is_heap_static = true;
+    user_heap.is_read_only = false;
+    user_heap.start_address = (void *)heap_start;
+    user_heap.end_address = ((void *)heap_start + PAGE_SIZE * 2);
+    user_heap.max_end_address = user_heap.end_address;
 
-    for (size_t page = current_active_task->user_heap.start_address; page <= current_active_task->user_heap.end_address; page += PAGE_SIZE)
+    for (size_t page = user_heap.start_address; page <= user_heap.end_address; page += PAGE_SIZE)
     {
         vmmngr_free_page_and_phys(page); // TODO REMOVE THIS LINE THIS IS A TEMP FIX
         vmmngr_alloc_page_and_phys(page, USER_FLAGS);
     }
 
-    heap_t *user_heap_self_mapped = self_map_heap(current_active_task->user_heap);
-
-    memcpy(&current_active_task->user_heap, user_heap_self_mapped, sizeof(heap_t));
+    // TODO make sure user cant change heap settings
+    current_active_task->user_heap = self_map_heap(user_heap);
 
     uint32_t real_argc = argc + 1;
-    char **real_argv = malloc_h(sizeof(char *) * (real_argc), &current_active_task->user_heap);
+    char **real_argv = malloc_h(sizeof(char *) * (real_argc), current_active_task->user_heap);
 
-    char *file_name_arg = malloc_h(sizeof(char) * strlen(filename), &current_active_task->user_heap);
+    char *file_name_arg = malloc_h(sizeof(char) * strlen(filename), current_active_task->user_heap);
     strcpy(file_name_arg, filename);
     real_argv[0] = file_name_arg;
 
     for (size_t i = 1; i < real_argc; i++)
     {
-        size_t currnt_arg_len = strlen(argv[i]);
+        size_t currnt_arg_len = strlen(tmp_argv[i - 1]);
 
-        char *current_arg = malloc_h(sizeof(char) * currnt_arg_len, &current_active_task->user_heap);
-        strcpy(current_arg, argv[i]);
+        char *current_arg = malloc_h(sizeof(char) * currnt_arg_len, current_active_task->user_heap);
+        strcpy(current_arg, tmp_argv[i - 1]);
 
         real_argv[i] = current_arg;
     }
 
     uint32_t start_data;
     memcpy(&start_data, entry_point, 4);
+
+    // frees argc for later
+    for(size_t i = 0; i < argc ; i++)
+    {
+        free(tmp_argv[i]);
+    }
+
+    free(tmp_argv);
 
     enter_user_space_program(entry_point, real_argc, real_argv, USER_STACK_TOP);
 

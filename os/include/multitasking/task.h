@@ -52,7 +52,7 @@ typedef struct task_s {
     uint32_t sleep_expiry;
     struct task_list_s tasks_wating_for_exit;
     uint32_t pid;
-    struct heap_s user_heap;
+    struct heap_s *user_heap;
     uint32_t user_stack_top;
 } task_t; // size is 12 + 4 + 4 + 4 == (24)
 

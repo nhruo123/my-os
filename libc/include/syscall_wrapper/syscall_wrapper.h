@@ -79,6 +79,8 @@ DECL_SYSCALL2(mk_file, char *, int)
 DECL_SYSCALL3(readdir, char *, dir_entry_t *, int)
 DECL_SYSCALL4(read, char *,  char *, int, int)
 DECL_SYSCALL4(write, char *,  char *, int, int)
+DECL_SYSCALL2(stats, char *, file_stats_t *)
 
+DECL_SYSCALL0(heap_loc)
 
 #endif

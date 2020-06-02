@@ -22,6 +22,11 @@ static int allocate_page_for_user(void *loc)
     return 1;
 }
 
+static int get_user_heap_loc()
+{
+    return current_active_task->user_heap;
+}
+
 
 static void *syscalls[SYSCALL_COUNT] = {
     // general
@@ -45,6 +50,11 @@ static void *syscalls[SYSCALL_COUNT] = {
     readdir_vfs,
     read_vfs,
     write_vfs,
+    stats_vfs,
+
+    // temp
+    get_user_heap_loc,
+
 };
 
 void init_syscalls()

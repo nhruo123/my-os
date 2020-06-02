@@ -74,9 +74,15 @@ static uint32_t ustar_read(char *filename, char *buffer, uint32_t offset, uint32
 
     uint32_t file_offset = find_file_offset(filename, &file_header, disk);
 
-    if (file_offset == 0)
+    if (file_offset == 0 || (file_header.typeflag != AUSTAR_FILE_TYPE && file_header.typeflag != BUSTAR_FILE_TYPE))
     {
         return 0;
+    }
+
+    uint32_t file_size = oct2bin(file_header.size, 11);
+    if(size + offset > file_size)
+    {
+        size = file_size - offset;
     }
 
     disk->read(buffer, offset + file_offset, size, disk);

@@ -16,11 +16,13 @@ void enter_user_space_program(void *entry_point, int argc, char **argv, void *st
         "movl %3, %%esp\n" // set stack
         "pushl %2 \n"
         "pushl %1 \n"
+
         "movw $0x23, %%ax\n"     // user data segment
         "movw %%ax, %%ds\n"
         "movw %%ax, %%es\n"
         "movw %%ax, %%fs\n"
         "movw %%ax, %%gs\n"
+        
         "movl %%esp, %%eax\n"
         "pushl $0x23\n" // push ues data segment for iret
         "pushl %%eax\n" // push stack location for iret
