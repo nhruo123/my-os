@@ -130,7 +130,7 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 
 	kprint("starting a:hello....\n");
 
-	create_task(start_shell, 1, "a:hello");
+	create_task(start_shell, 1, "a:shell.elf");
 
 	kprint("halt...\n");
 

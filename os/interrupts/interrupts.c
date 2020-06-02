@@ -126,7 +126,7 @@ static void init_pics(uint8_t pic1_offset, uint8_t pic2_offset) {
 	outb(PIC2_DATA, ICW4);
 
 	/* disable all IRQs but keybord */
-	outb(PIC1_DATA, 0xFC);
+	outb(PIC1_DATA, 0xFC); // 0xFC good
 	outb(PIC2_DATA, 0xFF);
 }
 

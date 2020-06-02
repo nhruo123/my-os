@@ -29,6 +29,8 @@ void exit_task_function()
 {
     lock_kernel_stuff();
 
+    printf("task(0x%x) exited\n", current_active_task->pid);
+
     task_t *wating_task = pop_task_form_list(&current_active_task->tasks_wating_for_exit);
 
     while (wating_task != NULL)
