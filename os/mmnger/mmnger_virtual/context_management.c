@@ -99,13 +99,10 @@ void init_context()
 page_dir_entry_t clone_page_table(size_t page_table_index)
 {
     lock_kernel_stuff();
-    page_dir_entry_t old_reserved_temp_table = current_page_dir[RESERVED_TEMP_TABLE];
 
-    page_dir_entry_t dir_entry_to_copy = current_page_dir[page_table_index];
     page_dir_entry_t new_page_dir_entry = {0};
-
+    new_page_dir_entry.flags = current_page_dir[page_table_index].flags;
     new_page_dir_entry.physical_address = (uint32_t)pmmngr_alloc_page() >> 12;
-    new_page_dir_entry.flags = dir_entry_to_copy.flags;
 
     // empty page table
     if((new_page_dir_entry.flags & PRESENT_PAGE) == 0) {
@@ -113,18 +110,17 @@ page_dir_entry_t clone_page_table(size_t page_table_index)
         return new_page_dir_entry;
     }
 
-    current_page_dir[RESERVED_TEMP_TABLE] = new_page_dir_entry;
-    flushTLB();
+    page_dir_entry_t old_reserved_temp_table = mount_page_dir_on_temp_dir(new_page_dir_entry);
 
     page_table_t page_table_to_copy = (page_table_t)get_page_address_from_indexes(LOOP_BACK_TABLE, page_table_index);
     page_table_t new_page_table = (page_table_t)get_page_address_from_indexes(LOOP_BACK_TABLE, RESERVED_TEMP_TABLE);
 
     for (size_t page_index = 0; page_index < PAGES_IN_TABLE; page_index++)
     {
+        new_page_table[page_index].flags = page_table_to_copy[page_index].flags;
 
-        if (page_table_to_copy[page_index].flags & PRESENT_PAGE)
-        {
-            new_page_table[page_index].flags = page_table_to_copy[page_index].flags;
+        if ((page_table_to_copy[page_index].flags & PRESENT_PAGE) != 0)
+        {   
             new_page_table[page_index].physical_address = (uint32_t)pmmngr_alloc_page() >> 12;
             flushTLB();
 
@@ -135,8 +131,7 @@ page_dir_entry_t clone_page_table(size_t page_table_index)
         }
     }
 
-    current_page_dir[RESERVED_TEMP_TABLE] = old_reserved_temp_table;
-    flushTLB();
+    mount_page_dir_on_temp_dir(old_reserved_temp_table);
 
     unlock_kernel_stuff();
     return new_page_dir_entry;
@@ -144,26 +139,26 @@ page_dir_entry_t clone_page_table(size_t page_table_index)
 
 address_space_t create_new_address_space()
 {
-    page_dir_entry_t old_reserved_temp_table = current_page_dir[RESERVED_TEMP_TABLE];
-
-    address_space_t new_page_dir_entry;
-
+    // creating adder space
+    address_space_t new_page_dir_entry = {0};
     new_page_dir_entry.physical_address = (uint32_t)pmmngr_alloc_page();
 
-    current_page_dir[RESERVED_TEMP_TABLE].flags = KERNEL_FLAGS;
-    current_page_dir[RESERVED_TEMP_TABLE].physical_address = new_page_dir_entry.physical_address >> 12;
-    flushTLB();
+    // mounting new adder space on tmp table
+    page_dir_entry_t old_reserved_temp_table = mount_address_space_on_temp_dir(new_page_dir_entry);
 
+    // geting adder of the page dir
     page_directory_t new_page_dir = (page_directory_t)get_page_address_from_indexes(LOOP_BACK_TABLE, RESERVED_TEMP_TABLE);
 
     // set new page dir with 0 cuz real memroy is random
     memset(new_page_dir, 0x0, PAGE_SIZE);
 
     // copy all page tables beside the loopback
-    for (size_t table_index = kernel_start_address >> 22; table_index < (MAX_ADDRES >> 22); table_index++)
+    for (size_t table_index = (kernel_start_address >> 22); table_index < (MAX_ADDRES >> 22); table_index++)
     {
+        // printf("copy index %d to new dir table\n", table_index);
         if (table_index == STACK_TABLE)
         {
+            // printf("found stack index skipping...\n");
             continue;
         }
         new_page_dir[table_index] = current_page_dir[table_index];
@@ -171,17 +166,14 @@ address_space_t create_new_address_space()
 
     // change loop back map for new page dir
     new_page_dir[LOOP_BACK_TABLE].flags = KERNEL_FLAGS;
-    new_page_dir[LOOP_BACK_TABLE].physical_address = new_page_dir_entry.physical_address >> 12;
-
-    // // TODO REMOVE THIS AND MANGAGE VGA
-    // size_t vga_index = get_page_directory_index(0xB8000);
-    // new_page_dir[vga_index] = current_page_dir[vga_index];
+    new_page_dir[LOOP_BACK_TABLE].physical_address = (new_page_dir_entry.physical_address >> 12);
+    flushTLB();
 
     // clone stack page table
     new_page_dir[STACK_TABLE] = clone_page_table(STACK_TABLE);
-
-    current_page_dir[RESERVED_TEMP_TABLE] = old_reserved_temp_table;
     flushTLB();
+
+    mount_page_dir_on_temp_dir(old_reserved_temp_table);
 
     return new_page_dir_entry;
 }

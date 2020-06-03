@@ -299,9 +299,10 @@ static task_t *create_empty_task()
 
     task_t *task = calloc(1, sizeof(task_t));
 
-    address_space_t new_address_space = create_new_address_space();
-    task->regs.address_space = new_address_space;
+    address_space_t adder_space = create_new_address_space();
+    task->regs.address_space = adder_space;
 
+    
     task->status = READY_TO_RUN;
     task->next_task = NULL;
     task->millisecond_used = 0;
@@ -382,12 +383,13 @@ uint32_t fork()
     lock_kernel_stuff();
     task_t *new_task = create_empty_task();
 
+    
+
     new_task->user_stack_top = current_active_task->user_stack_top;
     new_task->regs.esp0 = current_active_task->regs.esp0;
     new_task->user_heap = current_active_task->user_heap;
 
-    address_space_t new_adder_space = new_task->regs.address_space;
-    page_dir_entry_t old_reserved_temp_table = mount_address_space_on_temp_dir(new_adder_space);
+    page_dir_entry_t old_reserved_temp_table = mount_address_space_on_temp_dir(new_task->regs.address_space);
 
     page_directory_t page_dir = (page_directory_t)get_page_address_from_indexes(LOOP_BACK_TABLE, RESERVED_TEMP_TABLE);
 
@@ -395,6 +397,7 @@ uint32_t fork()
     {
         // we set the new addres space to the cloned page table
         page_dir_entry_t new_page_table = clone_page_table(page_table_index);
+
         page_dir[page_table_index] = new_page_table;
     }
 
@@ -406,8 +409,6 @@ uint32_t fork()
 
     ebx = esi = edi = 1;
 
-
-    
     mount_page_dir_on_temp_dir(page_dir[STACK_TABLE]);
     void *top_of_new_stack = (void *)get_page_address_from_indexes(RESERVED_TEMP_TABLE, 0);
     top_of_new_stack = ((uint32_t)top_of_new_stack & 0xFFC00000) | ((ebp + 0x4) & 0x3FFFFF);
@@ -416,13 +417,14 @@ uint32_t fork()
 
     top_of_new_stack = push_to_other_stack(0, top_of_new_stack);         // start func parameter
     top_of_new_stack = push_to_other_stack((uint32_t)fork_wrapper, top_of_new_stack); // start func location
-    
+
     top_of_new_stack = push_to_other_stack(*(ebp_as_pointer - 3), top_of_new_stack);         // start func location ebx
     top_of_new_stack = push_to_other_stack(*(ebp_as_pointer - 2), top_of_new_stack);         // start func location esi
     top_of_new_stack = push_to_other_stack(*(ebp_as_pointer - 1), top_of_new_stack);         // start func location edi
     top_of_new_stack = push_to_other_stack(*ebp_as_pointer, top_of_new_stack); // start func location ebp
 
     new_task->regs.esp  = (get_page_address_from_indexes(STACK_TABLE,0) & 0xFFC00000) | ((uint32_t)top_of_new_stack & 0x3FFFFF);
+
 
     mount_page_dir_on_temp_dir(old_reserved_temp_table);
 

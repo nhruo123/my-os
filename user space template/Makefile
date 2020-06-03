@@ -2,10 +2,10 @@ PROGRAM_NAME := $(notdir ${shell pwd})
 BUILD_DIR := $(BASE_BUILD_DIR)/$(PROGRAM_NAME)
 OUT := $(BUILD_DIR)/$(PROGRAM_NAME).elf
 
-CC := i686-elf-gcc
+CC := i686-elf-gcc --sysroot="$(SYSROOT)" -isystem=/usr/include 
 AR := i686-elf-ar
 
-CFLAGS +=-O0 -ffreestanding --sysroot="$(SYSROOT)" -isystem=/usr/include 
+CFLAGS +=-O0 -g -ffreestanding -Wall -Wextra Iinclude 
 
 C_OBJS :=$(shell find . -type f -name "*.c")
 ASM_OBJS := $(shell find . -type f -name "*.s")
@@ -24,7 +24,7 @@ all: $(OUT)
 $(OUT): dirs $(OBJS) $(BUILD_DIR)/user.lds
 	echo $(OBJS)
 	$(eval TMP := $(shell find $(BUILD_DIR) -type f -name "*.o" -printf "%f\n" | grep "[^crt0.o]"))
-	cd $(BUILD_DIR); $(CC) $(TMP) -T $(BUILD_DIR)/user.lds -o $@ $(CFLAGS) $(LIBS)
+	cd $(BUILD_DIR); $(CC) $(TMP) -T $(BUILD_DIR)/user.lds -o $@ -O0 -ffreestanding -Wall -Wextra -Iinclude  $(LIBS)
 
 
 %.o : %.c
