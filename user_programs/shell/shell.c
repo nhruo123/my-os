@@ -12,6 +12,7 @@ void main()
 
 	while (true)
 	{
+		putchar('>');
 		run_command();
 	}
 }

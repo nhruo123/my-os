@@ -13,22 +13,5 @@ void main(int argc, char **argv)
 		return;
 	}
 
-	char buffer[BUFF_SIZE];
-	int offset = 0;
-
-	int read = sys_read(argv[1], buffer, offset, BUFF_SIZE);
-	if (read < 0)
-	{
-		printf("bad file name\n");
-		return;
-	}
-	while (read != 0)
-	{
-		offset += read;
-		for (int i = 0; i < read; i++)
-		{
-			putchar(buffer[i]);
-		}
-		read = sys_read(argv[1], buffer, offset, BUFF_SIZE);
-	}
+	printf("%s\n",argv[1]);
 }
