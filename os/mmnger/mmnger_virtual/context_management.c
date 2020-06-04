@@ -156,7 +156,7 @@ address_space_t create_new_address_space()
     for (size_t table_index = (kernel_start_address >> 22); table_index < (MAX_ADDRES >> 22); table_index++)
     {
         // printf("copy index %d to new dir table\n", table_index);
-        if (table_index == STACK_TABLE)
+        if (table_index == STACK_TABLE || table_index == RESERVED_TEMP_TABLE )
         {
             // printf("found stack index skipping...\n");
             continue;

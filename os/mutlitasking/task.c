@@ -395,10 +395,15 @@ uint32_t fork()
 
     for (size_t page_table_index = 0; (page_table_index * PAGE_SIZE * PAGE_SIZE) < KERNEL_SPACE; page_table_index++)
     {
-        // we set the new addres space to the cloned page table
-        page_dir_entry_t new_page_table = clone_page_table(page_table_index);
-
-        page_dir[page_table_index] = new_page_table;
+        if(page_table_index == RESERVED_TEMP_TABLE){
+            page_dir[page_table_index].flags = 0;
+            page_dir[page_table_index].physical_address = 0;
+        } 
+        else
+        {
+            page_dir_entry_t new_page_table = clone_page_table(page_table_index);
+            page_dir[page_table_index] = new_page_table;
+        }
     }
 
     register volatile uint32_t *ebp_as_pointer asm ("ebp");

@@ -65,7 +65,7 @@ static char translate_scan_code_to_assci(char code)
     if (code == 0xF) // tab space
         return '\t';
 
-    if (code >= 0x02 && code <= 0x0B) // numbers 0-9
+    if (code >= 0x02 && code <= 0x0D) // numbers 0-9
     {
         if (shift_is_pressed)
             return "!@#$%^&*()_+"[code - 0x02];

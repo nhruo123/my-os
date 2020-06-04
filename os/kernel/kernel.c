@@ -40,7 +40,6 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 
 	clear_screen();
 
-
 	// init interrupts
 	kprint("Starting init idt....\n");
 
@@ -68,7 +67,7 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 
 	pmmngr_change_heap();
 	kprint("old heap is copyed\n");
-	
+
 	kprint("heap mutex is up\n");
 
 	kprint("init multitasking...\n");
@@ -111,14 +110,15 @@ void main(multiboot_info_t *mbt, heap_t *bootstrap_heap)
 		kprint("ram_disk is a ustart fs type!\n");
 		ram_disk->fs = test_fs;
 		mount_disk(ram_disk, "a");
-	} else
+	}
+	else
 	{
 		kprint("ram_disk is NOT a ustart fs type!\n");
 	}
 
 	kprint("starting heap test task... \n");
 
-	create_task(test_fork,0);
+	create_task(test_fork, 0);
 
 	task_t *new_task = create_task(test_heap, 0);
 
@@ -141,14 +141,14 @@ void test_fork()
 {
 	printf("before fork...\n");
 	uint32_t new_pid = fork();
-	if(new_pid != 0) 
+	if (new_pid != 0)
 	{
 		waitpid(new_pid);
 	}
 	printf("after fork! new_pid = %d\n", new_pid);
 }
 
-void start_shell(char * shell_name)
+void start_shell(char *shell_name)
 {
 	char file_value[200] = {0};
 	char file_name[200] = {0};
@@ -159,7 +159,8 @@ void start_shell(char * shell_name)
 	// clear_screen();
 	char *test = "a:";
 	size_t file_index = 0;
-	while (readdir_vfs(test, &dir_entry, file_index) == 1) {
+	while (readdir_vfs(test, &dir_entry, file_index) == 1)
+	{
 		file_index++;
 		strcpy(file_name, test);
 		strcpy(strchr(file_name, ':') + 1, dir_entry.filename);
